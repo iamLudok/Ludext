@@ -1,0 +1,14 @@
+# Variables sensibles
+.env
+
+# Archivos Claude
+.claude/
+
+# Dispositivos conectados a la red
+system/devices.json
+
+# Configuracion del bot
+deploy/ludext-bot.service
+
+# Ideas de futuras funcionalidades
+docs/ideas.md

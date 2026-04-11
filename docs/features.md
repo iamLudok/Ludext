@@ -1,0 +1,140 @@
+# Features — Detailed Documentation
+
+## Medication Reminders
+
+Ludext tracks your medicines and reminds you to take them via Telegram. All configuration and history is stored in **Nextcloud Notes**, so you can view and edit it from any device.
+
+### Setup
+
+On first run, Ludext automatically creates two notes in Nextcloud:
+
+- **"Medicinas Config"** — one medicine per line, edit this to add or remove medicines
+- **"Medicinas"** — daily history of what you've taken (managed automatically)
+
+The format in "Medicinas Config" is:
+
+```
+nombre,cada_dias,hora_toma,aviso1,aviso2,...
+```
+
+Example:
+
+```
+MiMedicina,1,08:00,09:30,13:00
+```
+
+| Field | Description |
+|---|---|
+| `nombre` | Medicine name — used in `/medicina <name>` |
+| `cada_dias` | `1` = every day, `2` = every other day, etc. |
+| `hora_toma` | Time you should take it (shown in the daily briefing) |
+| `aviso1`, `aviso2`... | Times to send a Telegram alert if not yet taken |
+
+### How it works
+
+- The daily briefing includes which medicines you need to take that day
+- Send `/medicina MiMedicina` to mark it as taken
+- At each alert time, if the medicine hasn't been marked, you get a Telegram reminder
+- For every-other-day medicines, Ludext automatically calculates which days it's due based on your history
+
+---
+
+## Shopping List
+
+The shopping list is stored in a Nextcloud Note called **"Lista de la compra"**, accessible from any device.
+
+```
+/compra           → show current list
+/compra leche     → add "leche" to the list
+/comprado leche   → remove "leche" from the list
+/vaciarcompra     → clear everything
+```
+
+---
+
+## Car Expenses
+
+Car expenses are stored in a Nextcloud Note called **"Gastos del coche"** and organised by date. You can view the raw data from any device, and use `/coche` to get monthly summaries with comparisons.
+
+```
+/gasolina 45 1.72           → logs 45L × 1.72€/L = 77.40€
+/taller Cambio aceite 85    → workshop expense
+/recambio Bombillas H4 12   → personal purchase
+/coche                      → current month summary vs previous month
+/coche 2026-03              → summary for March 2026
+```
+
+---
+
+## Wishlist
+
+The wishlist is stored in a Nextcloud Note called **"Wishlist"**, accessible from any device.
+
+```
+/wishlist                                     → show your wishlist
+/wish Auriculares Sony | https://amazon.es/…  → add a product with its link
+/unwish Auriculares                           → remove a product
+```
+
+---
+
+## System Monitor
+
+The `/pi` command shows the current state of the Raspberry Pi:
+
+```
+🖥️ Sistema — Raspberry Pi
+
+🌡️ CPU:    52.3 °C  ✅
+💾 RAM:    1823 / 3828 MB  (47.6%)  ✅
+💿 Disco:  12.4 / 29.7 GB  (41.8%)  ✅
+⏱️ Uptime: 3d 14h 22m
+```
+
+The bot also monitors the system every 5 minutes in the background and sends an automatic Telegram alert if any threshold is exceeded. Thresholds are configurable at the top of `sistema.py`:
+
+| Variable | Default | Description |
+|---|---|---|
+| `TEMP_AVISO` | 70 °C | Warning alert |
+| `TEMP_CRITICA` | 80 °C | Critical alert |
+| `RAM_AVISO` | 85 % | RAM usage alert |
+| `DISCO_AVISO` | 90 % | Disk usage alert |
+
+---
+
+## Network Devices
+
+The `/red` command scans your home network and lists all connected devices with their IPs and MAC addresses.
+
+Requires `nmap` installed on the Pi:
+
+```bash
+sudo apt install nmap
+```
+
+To label your devices by name, edit `dispositivos.json`:
+
+```json
+{
+  "macs": {
+    "AA:BB:CC:DD:EE:FF": "Móvil",
+    "11:22:33:44:55:66": "Smart TV"
+  },
+  "ips": {
+    "192.168.1.1":  "Router",
+    "192.168.1.50": "Raspberry Pi"
+  }
+}
+```
+
+---
+
+## Customizing the Daily Briefing
+
+To adjust which news topics the AI prioritizes, edit the `build_prompt()` function in [ia.py](../ia.py), in the `NOTICIAS RELEVANTES PARA MÍ` section.
+
+To change the briefing time, edit your crontab:
+
+```bash
+crontab -e
+```
