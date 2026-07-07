@@ -24,8 +24,10 @@
 
 | Command | Description |
 |---|---|
-| `/medicinas` | Show today's medicines and status |
-| `/medicina <name>` | Mark a medicine as taken |
+| `/medicinas` | Show today's medicines with one-tap buttons to mark them as taken |
+| `/medicina <name>` | Mark a medicine as taken (reminders also include a ✅ button) |
+| `/graficomedicinas` | Adherence chart for the last 30 days |
+| `/graficomedicinas <days>` | Adherence chart for the last N days (7-90) |
 
 ## Shopping List
 
@@ -45,6 +47,8 @@
 | `/recambio <description> <amount>` | Log a personal purchase (parts, accessories) |
 | `/coche` | Monthly expense summary with comparison to previous month |
 | `/coche <YYYY-MM>` | Summary for a specific month |
+| `/graficocoche` | Stacked bar chart of expenses by category, last 6 months |
+| `/graficocoche <months>` | Chart for a custom number of months |
 
 ## Wishlist
 

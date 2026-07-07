@@ -112,7 +112,7 @@ Requires `nmap` installed on the Pi:
 sudo apt install nmap
 ```
 
-To label your devices by name, edit `dispositivos.json`:
+To label your devices by name, edit `system/devices.json`:
 
 ```json
 {
@@ -131,7 +131,7 @@ To label your devices by name, edit `dispositivos.json`:
 
 ## Customizing the Daily Briefing
 
-To adjust which news topics the AI prioritizes, edit the `build_prompt()` function in [ia.py](../ia.py), in the `NOTICIAS RELEVANTES PARA MÍ` section.
+To adjust how each section of the briefing is formatted (how many emails, news items per feed, etc.), edit the section functions in [core/ai.py](../core/ai.py).
 
 To change the briefing time, edit your crontab:
 
