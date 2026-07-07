@@ -3,7 +3,7 @@
 # ─────────────────────────────────────────────────────────
 
 import json
-from .api import obtener_o_crear_nota, actualizar_nota
+from .api import obtener_o_crear_nota, actualizar_nota, atomico
 
 TITULO_NOTA = "Wishlist"
 
@@ -41,6 +41,7 @@ def listar_wish():
         lineas.append(f"\n  • {p['nombre']}\n    {p['url']}")
     return "\n".join(lineas)
 
+@atomico
 def añadir_wish(args):
     """
     /wish <nombre> | <url>
@@ -67,6 +68,7 @@ def añadir_wish(args):
     except Exception as e:
         return f"⚠️ Error al añadir: {e}"
 
+@atomico
 def borrar_wish(nombre):
     """
     /unwish <nombre>

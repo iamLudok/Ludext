@@ -2,7 +2,7 @@
 # shopping.py — Lista de la compra en Nextcloud Notes
 # ─────────────────────────────────────────────────────────
 
-from .api import obtener_o_crear_nota, actualizar_nota
+from .api import obtener_o_crear_nota, actualizar_nota, atomico
 
 TITULO_NOTA = "Lista de la compra"
 
@@ -38,6 +38,7 @@ def listar():
     except Exception as e:
         return f"⚠️ Error al leer la lista: {e}"
 
+@atomico
 def añadir(articulo):
     """
     Añade un artículo a la lista si no estaba ya
@@ -52,6 +53,7 @@ def añadir(articulo):
     except Exception as e:
         return f"⚠️ Error al añadir: {e}"
 
+@atomico
 def comprado(articulo):
     """
     Elimina un artículo de la lista
@@ -74,6 +76,7 @@ def comprado(articulo):
     except Exception as e:
         return f"⚠️ Error al eliminar: {e}"
 
+@atomico
 def vaciar():
     """
     Vacía la lista completa

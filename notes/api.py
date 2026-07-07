@@ -2,11 +2,25 @@
 # api.py — Interfaz con Nextcloud Notes
 # ─────────────────────────────────────────────────────────
 
+import threading
+from functools import wraps
 import requests
 from core.config import CONFIG
 
 BASE = f"{CONFIG['nextcloud_url']}/apps/notes/api/v1"
 AUTH = (CONFIG["nextcloud_user"], CONFIG["nextcloud_password"])
+
+# Los comandos del bot corren en hilos: dos operaciones leer-modificar-guardar
+# simultáneas sobre una nota podrían pisarse. Este lock las serializa.
+_LOCK = threading.RLock()
+
+def atomico(fn):
+    """Decorador: ejecuta la función en exclusión mutua con las demás escrituras."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        with _LOCK:
+            return fn(*args, **kwargs)
+    return wrapper
 
 def _get(endpoint):
     resp = requests.get(f"{BASE}{endpoint}", auth=AUTH, timeout=10)
