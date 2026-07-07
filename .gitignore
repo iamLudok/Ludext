@@ -12,3 +12,13 @@ deploy/ludext-bot.service
 
 # Ideas de futuras funcionalidades
 docs/ideas.md
+
+# Python
+__pycache__/
+*.pyc
+
+# Base de datos de fotos indexadas (CLIP)
+photos_db/
+
+# Salida de depuración del briefing
+ludext_briefing.txt

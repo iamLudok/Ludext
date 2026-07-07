@@ -1,0 +1,15 @@
+# Núcleo
+requests
+python-dotenv
+
+# Nextcloud CalDAV (tareas y eventos)
+caldav
+icalendar
+
+# Gráficos (/graficocoche)
+matplotlib
+
+# Búsqueda de fotos con CLIP (/buscarfoto, /indexarfotos)
+numpy
+pillow
+sentence-transformers
