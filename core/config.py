@@ -19,10 +19,6 @@ CONFIG = {
     "nextcloud_password":   os.getenv("NEXTCLOUD_PASSWORD"),
     "nextcloud_caldav_url": os.getenv("NEXTCLOUD_CALDAV_URL"),
 
-    # Ollama
-    "ollama_url":           os.getenv("OLLAMA_URL"),
-    "ollama_model":         os.getenv("OLLAMA_MODEL"),
-
     # Telegram
     "telegram_token":       os.getenv("TELEGRAM_TOKEN"),
     "telegram_chat_id":     os.getenv("TELEGRAM_CHAT_ID"),

@@ -86,31 +86,43 @@ def get_tasks():
     return tasks
 
 
-def get_news(max_items=30):
+def get_news(max_per_feed=3):
     """
-    Devuelve los últimos artículos no leídos de Nextcloud News
+    Devuelve hasta max_per_feed artículos no leídos de cada feed
+    para asegurar variedad entre fuentes
     """
     print("📰 Leyendo noticias...")
     articles = []
+    auth = (CONFIG["nextcloud_user"], CONFIG["nextcloud_password"])
+    base = f"{CONFIG['nextcloud_url']}/index.php/apps/news/api/v1-3"
     try:
-        url = f"{CONFIG['nextcloud_url']}/index.php/apps/news/api/v1-3/items"
-        resp = requests.get(
-            url,
-            auth=(CONFIG["nextcloud_user"], CONFIG["nextcloud_password"]),
-            params={"batchSize": max_items, "offset": 0, "type": 3, "id": 0, "getRead": False},
-            timeout=15,
-        )
-        resp.raise_for_status()
+        feeds_resp = requests.get(f"{base}/feeds", auth=auth, timeout=15)
+        feeds_resp.raise_for_status()
+        feeds = feeds_resp.json().get("feeds", [])
 
-        for item in resp.json().get("items", []):
-            body_clean = re.sub(r"<[^>]+>", "", item.get("body", ""))[:300]
-            articles.append({
-                "title":   item.get("title", ""),
-                "summary": body_clean.strip(),
-                "feed":    item.get("feedTitle", ""),
-            })
+        for feed in feeds:
+            resp = requests.get(
+                f"{base}/items",
+                auth=auth,
+                params={"batchSize": 50, "offset": 0, "type": 0, "id": feed["id"], "getRead": False},
+                timeout=15,
+            )
+            resp.raise_for_status()
+            items = sorted(
+                resp.json().get("items", []),
+                key=lambda x: x.get("pubDate") or 0,
+                reverse=True,
+            )
+            for item in items[:max_per_feed]:
+                body_clean = re.sub(r"<[^>]+>", "", item.get("body", ""))[:200]
+                articles.append({
+                    "title":   item.get("title", ""),
+                    "summary": body_clean.strip(),
+                    "feed":    feed["title"],
+                    "date":    item.get("pubDate"),
+                })
 
-        print(f"   → {len(articles)} artículos")
+        print(f"   → {len(articles)} artículos de {len(feeds)} feeds")
     except Exception as e:
         print(f"   ⚠️  Error en noticias: {e}")
     return articles
