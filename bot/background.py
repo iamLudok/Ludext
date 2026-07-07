@@ -8,34 +8,54 @@ from caldav import DAVClient
 from core.config import CONFIG
 from notes.medicine import pendientes_en_hora
 from system.monitor import alertas_sistema
-from .handlers import send
+from .handlers import send, teclado_medicinas
 
-# UIDs de eventos para los que ya se ha mandado la alerta de 30min
-_alertas_enviadas: set = set()
+# Alertas de 30min ya enviadas: { "uid|inicio_iso": datetime_inicio }
+_alertas_enviadas: dict = {}
 
-# Registro de avisos de medicinas ya enviados hoy { "fecha": "2026-04-10", "09:30": True, ... }
-_avisos_medicina_enviados: dict = {}
+# Cliente CalDAV cacheado: descubrir los calendarios cuesta varias peticiones
+# HTTP y este hilo corre cada minuto. Se invalida si una iteración falla.
+_calendarios_cache = None
+
+def _calendarios():
+    global _calendarios_cache
+    if _calendarios_cache is None:
+        client = DAVClient(
+            url=CONFIG["nextcloud_caldav_url"],
+            username=CONFIG["nextcloud_user"],
+            password=CONFIG["nextcloud_password"],
+        )
+        _calendarios_cache = client.principal().calendars()
+    return _calendarios_cache
 
 def _check_medicinas():
     """
     Comprueba cada minuto si toca mandar un aviso de medicinas.
     Cada medicina define sus propias horas de aviso en medicinas.json.
+    Revisa todos los minutos desde la última comprobación para no
+    saltarse ninguno si una iteración tarda más de 60 segundos.
     """
+    ultima = datetime.now()
     while True:
         try:
-            ahora = datetime.now().strftime("%H:%M")
-            hoy   = datetime.now().strftime("%Y-%m-%d")
+            ahora = datetime.now()
 
-            if _avisos_medicina_enviados.get("fecha") != hoy:
-                _avisos_medicina_enviados.clear()
-                _avisos_medicina_enviados["fecha"] = hoy
+            # Minutos transcurridos desde la última comprobación (incluido el actual)
+            minuto = ultima.replace(second=0, microsecond=0) + timedelta(minutes=1)
+            pendientes_minutos = []
+            while minuto <= ahora:
+                pendientes_minutos.append(minuto.strftime("%H:%M"))
+                minuto += timedelta(minutes=1)
+            ultima = ahora
 
-            if ahora not in _avisos_medicina_enviados:
-                sin_tomar = pendientes_en_hora(ahora)
-                if sin_tomar:
-                    _avisos_medicina_enviados[ahora] = True
-                    nombres = ", ".join(sin_tomar)
-                    send(f"💊 Recuerda tomar: {nombres}")
+            sin_tomar = []
+            for hhmm in pendientes_minutos:
+                sin_tomar += [m for m in pendientes_en_hora(hhmm) if m not in sin_tomar]
+            if sin_tomar:
+                send(
+                    f"💊 Recuerda tomar: {', '.join(sin_tomar)}",
+                    reply_markup=teclado_medicinas(),
+                )
 
         except Exception as e:
             print(f"   ⚠️  Error en avisos de medicinas: {e}")
@@ -47,20 +67,14 @@ def _check_alertas():
     Comprueba cada minuto si hay eventos que empiecen en ~30 minutos
     y manda una alerta si aún no se ha enviado para ese evento.
     """
+    global _calendarios_cache
     while True:
         try:
             ahora       = datetime.now()
             ventana_ini = ahora + timedelta(minutes=25)
             ventana_fin = ahora + timedelta(minutes=35)
 
-            client = DAVClient(
-                url=CONFIG["nextcloud_caldav_url"],
-                username=CONFIG["nextcloud_user"],
-                password=CONFIG["nextcloud_password"],
-            )
-            calendars = client.principal().calendars()
-
-            for cal in calendars:
+            for cal in _calendarios():
                 try:
                     results = cal.search(
                         start=ventana_ini,
@@ -74,23 +88,32 @@ def _check_alertas():
                         summary = str(comp.get("SUMMARY", "Sin título"))
                         dtstart = comp.get("DTSTART")
 
-                        if dtstart and not hasattr(dtstart.dt, "hour"):
+                        if not dtstart or not hasattr(dtstart.dt, "hour"):
                             continue
 
-                        if uid in _alertas_enviadas:
+                        # Los eventos recurrentes comparten UID, así que la
+                        # clave incluye la fecha/hora de cada repetición
+                        clave = f"{uid}|{dtstart.dt.isoformat()}"
+                        if clave in _alertas_enviadas:
                             continue
 
-                        hora_str = dtstart.dt.strftime("%H:%M") if dtstart else ""
+                        hora_str = dtstart.dt.strftime("%H:%M")
                         send(f"⏰ En 30 minutos: {summary} a las {hora_str}")
-                        _alertas_enviadas.add(uid)
-                except Exception:
-                    pass
+                        _alertas_enviadas[clave] = datetime.now()
+                except Exception as e:
+                    # Puede ser una conexión cacheada muerta: reconectar en
+                    # la siguiente iteración
+                    print(f"   ⚠️  Error consultando calendario: {e}")
+                    _calendarios_cache = None
 
-            if len(_alertas_enviadas) > 200:
-                _alertas_enviadas.clear()
+            # Purga las alertas de hace más de un día
+            limite = datetime.now() - timedelta(days=1)
+            for clave in [k for k, v in _alertas_enviadas.items() if v < limite]:
+                del _alertas_enviadas[clave]
 
         except Exception as e:
             print(f"   ⚠️  Error en alertas: {e}")
+            _calendarios_cache = None
 
         time.sleep(60)
 

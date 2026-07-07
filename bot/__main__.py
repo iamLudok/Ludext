@@ -7,7 +7,7 @@ import threading
 from datetime import datetime
 import requests
 from core.config import CONFIG
-from .handlers import send, handle
+from .handlers import send, handle, handle_callback
 from .background import _check_alertas, _check_medicinas, _check_sistema
 
 BASE_URL = f"https://api.telegram.org/bot{CONFIG['telegram_token']}"
@@ -23,6 +23,17 @@ def get_updates(offset=None):
         return resp.json().get("result", [])
     except Exception:
         return []
+
+def _procesar(text):
+    """Ejecuta un comando y envía la respuesta troceada a 4000 caracteres."""
+    try:
+        response = handle(text)
+        if response:
+            for i in range(0, len(response), 4000):
+                send(response[i:i+4000])
+    except Exception as e:
+        print(f"   ⚠️  Error procesando {text}: {e}")
+        send(f"⚠️ Error al procesar el comando: {e}")
 
 def main():
     print("=" * 50)
@@ -44,7 +55,17 @@ def main():
         updates = get_updates(offset)
 
         for update in updates:
-            offset  = update["update_id"] + 1
+            offset = update["update_id"] + 1
+
+            # Click en un botón inline (p. ej. marcar medicina como tomada)
+            callback = update.get("callback_query")
+            if callback:
+                cb_chat = str(callback.get("message", {}).get("chat", {}).get("id", ""))
+                if cb_chat == CHAT_ID:
+                    print(f"   → [botón] {callback.get('data', '')}")
+                    threading.Thread(target=handle_callback, args=(callback,), daemon=True).start()
+                continue
+
             message = update.get("message", {})
             chat_id = str(message.get("chat", {}).get("id", ""))
             text    = message.get("text", "")
@@ -56,10 +77,9 @@ def main():
                 continue
 
             print(f"   → {text}")
-            response = handle(text)
-            if response:
-                for i in range(0, len(response), 4000):
-                    send(response[i:i+4000])
+            # Cada comando en su propio hilo: los lentos (/red, /buscarfoto)
+            # no bloquean el polling ni al resto de comandos
+            threading.Thread(target=_procesar, args=(text,), daemon=True).start()
 
         if not updates:
             time.sleep(1)

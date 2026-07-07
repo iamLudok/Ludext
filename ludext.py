@@ -2,12 +2,13 @@
 # ludext.py — Script principal
 # ─────────────────────────────────────────────────────────
 
+import os
 import sys
 import requests
 from datetime import datetime
 from core.config import CONFIG
 from core.sources import get_emails, get_calendar_events, get_tasks, get_news
-from core.ai import build_prompt, ask_ollama
+from core.ai import build_briefing
 from notes.medicine import resumen_medicinas
 
 def send_telegram(message):
@@ -47,23 +48,18 @@ def main():
     articles  = get_news()
     medicines = resumen_medicinas()
 
-    # Paso 2: Construir el prompt con todos los datos
-    prompt = build_prompt(emails, events, tasks, articles, medicines)
+    # Paso 2: Construir el briefing con todos los datos
+    briefing = build_briefing(emails, events, tasks, articles, medicines)
 
-    # Paso 3 (opcional): guardar el prompt para depuración
+    # Paso 3 (opcional): guardar el briefing para depuración
     if "--debug" in sys.argv:
-        with open("/tmp/ludext_prompt.txt", "w") as f:
-            f.write(prompt)
-        print("   📝 Prompt guardado en /tmp/ludext_prompt.txt")
+        debug_path = os.path.join(os.path.dirname(__file__), "ludext_briefing.txt")
+        with open(debug_path, "w") as f:
+            f.write(briefing)
+        print(f"   📝 Briefing guardado en {debug_path}")
 
-    # Paso 4: Consultar la IA y obtener el resumen
-    summary = ask_ollama(prompt)
-    if not summary:
-        summary = "⚠️ No se pudo generar el resumen con IA. Revisa que Ollama esté corriendo."
-
-    # Paso 5: Enviar el resumen por Telegram
-    header = f"🌅 Ludext — {datetime.now().strftime('%A %d/%m/%Y')}\n\n"
-    send_telegram(header + summary)
+    # Paso 4: Enviar el briefing por Telegram
+    send_telegram(briefing)
 
     print("=" * 50)
     print("✅ Ludext completado")

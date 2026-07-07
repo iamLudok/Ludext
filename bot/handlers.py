@@ -3,18 +3,23 @@
 # ─────────────────────────────────────────────────────────
 
 import requests
+import threading
+import time
 from datetime import datetime
 from core.config import CONFIG
+from photos.indexer import run_indexing
+from photos.search import search_photos, download_photo_for_telegram
 from scheduling.tasks import crear_tarea, borrar_tarea, editar_tarea, listar_tareas
 from scheduling.events import crear_evento, borrar_evento, editar_evento
 from core.sources import get_emails, get_calendar_events, get_tasks, get_news
-from core.ai import build_prompt, ask_ollama
-from notes.medicine import marcar_tomada, resumen_medicinas
+from core.ai import build_briefing
+from notes.medicine import marcar_tomada, resumen_medicinas, medicinas_de_hoy, grafico_adherencia
 from notes.shopping import listar, añadir, comprado, vaciar
-from notes.car import registrar_gasolina, registrar_taller, registrar_recambio, resumen
+from notes.car import registrar_gasolina, registrar_taller, registrar_recambio, resumen, grafico_gastos
 from system.network import dispositivos_conectados
 from system.monitor import estado_sistema
 from notes.wishlist import añadir_wish, listar_wish, borrar_wish
+from notes.gf_gifts import añadir_regalo, listar_regalos, borrar_regalo
 
 BASE_URL = f"https://api.telegram.org/bot{CONFIG['telegram_token']}"
 CHAT_ID  = str(CONFIG["telegram_chat_id"])
@@ -35,13 +40,22 @@ AYUDA = """🤖 Comandos disponibles:
 /editarevent <viejo> | <nuevo> — renombra un evento
 
 💊 MEDICINAS
-/medicinas — estado de las medicinas de hoy
+/medicinas — estado de hoy, con botones para marcar
 /medicina <nombre> — marca una medicina como tomada
+/graficomedicinas — gráfico de adherencia (30 días)
+/graficomedicinas <días> — gráfico de los últimos N días
+(los avisos llegan con botón "✅ He tomado...")
 
 🎁 WISHLIST
 /wishlist — ver tu lista de deseos
 /wish <nombre> | <url> — añadir producto
 /unwish <nombre> — eliminar producto
+
+💝 REGALOS NOVIA
+/novia — ver la lista de ideas de regalo
+/regalo <nombre> — añadir una idea
+/regalo <nombre> | <url> — añadir idea con enlace
+/regalado <nombre> — marcar como comprado y eliminar
 
 🛒 LISTA DE LA COMPRA
 /compra — muestra la lista
@@ -61,6 +75,12 @@ AYUDA = """🤖 Comandos disponibles:
 /recambio <descripción> <importe> — compra personal
 /coche — resumen del mes actual
 /coche <YYYY-MM> — resumen de un mes concreto
+/graficocoche — gráfico de gastos (últimos 6 meses)
+/graficocoche <meses> — gráfico de los últimos N meses
+
+📷 FOTOS
+/buscarfoto <texto> — busca fotos por descripción natural
+/indexarfotos — indexa (o actualiza) las fotos de Nextcloud
 
 📬 RESUMEN
 /correos — resumen de correos no leídos
@@ -68,16 +88,65 @@ AYUDA = """🤖 Comandos disponibles:
 
 /ayuda — muestra este mensaje"""
 
-def send(text):
-    """Envía un mensaje de texto al chat configurado."""
+def _post_con_reintentos(endpoint, intentos=3, **kwargs):
+    """
+    POST a la API de Telegram con reintentos.
+    Respeta el retry_after de los errores 429 (rate limit).
+    Devuelve True si se envió, False si se agotaron los intentos.
+    """
+    for intento in range(intentos):
+        try:
+            resp = requests.post(f"{BASE_URL}/{endpoint}", **kwargs)
+            if resp.status_code == 429:
+                espera = resp.json().get("parameters", {}).get("retry_after", 3)
+                time.sleep(espera)
+                continue
+            resp.raise_for_status()
+            return True
+        except Exception as e:
+            print(f"   ⚠️  {endpoint} (intento {intento + 1}/{intentos}): {e}")
+            if intento < intentos - 1:
+                time.sleep(2 ** intento)  # 1s, 2s
+    return False
+
+def send(text, reply_markup=None):
+    """Envía un mensaje de texto al chat configurado, opcionalmente con botones."""
+    payload = {"chat_id": CHAT_ID, "text": text}
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    return _post_con_reintentos("sendMessage", json=payload, timeout=10)
+
+def _answer_callback(callback_id, text=""):
+    """Responde a un click de botón (toast en el móvil)."""
     try:
         requests.post(
-            f"{BASE_URL}/sendMessage",
-            json={"chat_id": CHAT_ID, "text": text},
+            f"{BASE_URL}/answerCallbackQuery",
+            json={"callback_query_id": callback_id, "text": text},
             timeout=10,
         )
     except Exception as e:
-        print(f"   ⚠️  Error enviando mensaje: {e}")
+        print(f"   ⚠️  Error respondiendo callback: {e}")
+
+def _edit_message(message_id, text, reply_markup=None):
+    """Edita un mensaje ya enviado (texto y botones)."""
+    payload = {"chat_id": CHAT_ID, "message_id": message_id, "text": text}
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    try:
+        requests.post(f"{BASE_URL}/editMessageText", json=payload, timeout=10)
+    except Exception as e:
+        print(f"   ⚠️  Error editando mensaje: {e}")
+
+def send_photo(photo_bytes: bytes, caption: str = ""):
+    """Envía una foto al chat via multipart/form-data."""
+    endpoint = "sendPhoto" if len(photo_bytes) < 9_000_000 else "sendDocument"
+    field    = "photo" if endpoint == "sendPhoto" else "document"
+    return _post_con_reintentos(
+        endpoint,
+        data={"chat_id": CHAT_ID, "caption": caption},
+        files={field: ("foto.jpg", photo_bytes, "image/jpeg")},
+        timeout=60,
+    )
 
 def _parse_fecha(texto):
     """
@@ -198,31 +267,37 @@ def cmd_editarevent(args):
     return msg
 
 def cmd_correos():
-    """Genera un resumen de los correos no leídos con Ollama."""
-    send("📧 Leyendo correos... (puede tardar unos minutos)")
     emails = get_emails()
     if not emails:
         return "📧 No tienes correos no leídos."
-
-    hoy = datetime.now().strftime("%A %d de %B")
-    lineas = [
-        f"Hoy es {hoy}. Resume en español estos correos no leídos.",
-        "Destaca solo los que requieren acción. Ignora newsletters y spam.",
-        "---",
-    ]
+    lineas = ["📧 Correos no leídos:"]
     for e in emails:
-        lineas.append(f"- De: {e['from'][:50]} | Asunto: {e['subject'][:80]}")
-        if e['body']:
-            lineas.append(f"  {e['body'][:200]}")
-    lineas.append("---")
-    lineas.append("Sé conciso. Máximo 200 palabras.")
+        lineas.append(f"  • {e['from'][:50]} — {e['subject'][:80]}")
+    return "\n".join(lineas)
 
-    resumen_correos = ask_ollama("\n".join(lineas))
-    return resumen_correos or "⚠️ Error al generar resumen de correos."
+def teclado_medicinas():
+    """
+    Teclado inline con un botón por medicina pendiente de hoy.
+    Devuelve None si no queda ninguna pendiente.
+    """
+    try:
+        pendientes = [m["nombre"] for m in medicinas_de_hoy() if not m["tomada"]]
+    except Exception as e:
+        print(f"   ⚠️  Error generando teclado de medicinas: {e}")
+        return None
+    if not pendientes:
+        return None
+    return {
+        "inline_keyboard": [
+            [{"text": f"✅ He tomado {n}", "callback_data": f"med:{n}"}]
+            for n in pendientes
+        ]
+    }
 
 def cmd_medicinas():
-    """Muestra el estado de las medicinas de hoy."""
-    return resumen_medicinas()
+    """Muestra el estado de las medicinas de hoy con botones para marcarlas."""
+    send(resumen_medicinas(), reply_markup=teclado_medicinas())
+    return None
 
 def cmd_medicina(args):
     """
@@ -230,9 +305,34 @@ def cmd_medicina(args):
     También acepta /medicina sola para mostrar el resumen.
     """
     if not args:
-        return resumen_medicinas()
+        return cmd_medicinas()
     _, msg = marcar_tomada(args)
     return msg
+
+def cmd_graficomedicinas(args):
+    """
+    /graficomedicinas          → adherencia de los últimos 30 días
+    /graficomedicinas <días>   → adherencia de los últimos N días (7-90)
+    """
+    n_dias = 30
+    if args:
+        try:
+            n_dias = int(args.strip())
+            if not 7 <= n_dias <= 90:
+                raise ValueError
+        except ValueError:
+            return "⚠️ Uso: /graficomedicinas <días entre 7 y 90>\nEjemplo: /graficomedicinas 30"
+
+    try:
+        png = grafico_adherencia(n_dias)
+    except Exception as e:
+        return f"⚠️ Error al generar el gráfico: {e}"
+
+    if not png:
+        return "💊 No hay medicinas configuradas en la nota 'Medicinas Config'."
+
+    send_photo(png, caption=f"💊 Adherencia de medicinas — últimos {n_dias} días")
+    return None
 
 def cmd_wish(args):
     """/wish <nombre> | <url> — añade un producto a la wishlist."""
@@ -245,6 +345,20 @@ def cmd_wishlist():
 def cmd_unwish(args):
     """/unwish <nombre> — elimina un producto de la wishlist."""
     return borrar_wish(args)
+
+def cmd_novia():
+    """/novia — muestra la lista de regalos para la novia."""
+    return listar_regalos()
+
+def cmd_regalo(args):
+    """/regalo <nombre> o /regalo <nombre> | <url> — añade una idea de regalo."""
+    return añadir_regalo(args)
+
+def cmd_regalado(args):
+    """/regalado <nombre> — elimina un regalo de la lista (ya comprado)."""
+    if not args:
+        return "⚠️ Uso: /regalado <nombre>"
+    return borrar_regalo(args)
 
 def cmd_compra(args):
     """
@@ -315,21 +429,87 @@ def cmd_coche(args):
     mes = args.strip() if args else None
     return resumen(mes)
 
+def cmd_graficocoche(args):
+    """
+    /graficocoche          → gráfico de los últimos 6 meses
+    /graficocoche <meses>  → gráfico de los últimos N meses
+    """
+    n_meses = 6
+    if args:
+        try:
+            n_meses = int(args.strip())
+            if n_meses <= 0:
+                raise ValueError
+        except ValueError:
+            return "⚠️ Uso: /graficocoche <número de meses>\nEjemplo: /graficocoche 6"
+
+    try:
+        png = grafico_gastos(n_meses)
+    except Exception as e:
+        return f"⚠️ Error al generar el gráfico: {e}"
+
+    if not png:
+        return "📊 No hay gastos registrados en ese periodo."
+
+    send_photo(png, caption=f"🚗 Gastos del coche — últimos {n_meses} meses")
+    return None
+
+def cmd_buscarfoto(query: str):
+    """/buscarfoto <texto> — busca fotos por descripción natural."""
+    if not query:
+        return "⚠️ Uso: /buscarfoto <descripción>\nEjemplo: /buscarfoto boarding pass islandia"
+
+    send(f"🔍 Buscando fotos: {query}...")
+    try:
+        results = search_photos(query, top_k=3)
+    except Exception as e:
+        return f"⚠️ Error en la búsqueda: {e}"
+
+    if not results:
+        return "📷 No encontré fotos que coincidan con tu búsqueda."
+
+    sent = 0
+    for r in results:
+        photo_bytes = download_photo_for_telegram(r["webdav_path"])
+        if photo_bytes:
+            score_pct = round(r["score"] * 100)
+            caption   = f"📸 {r['filename']} (similitud: {score_pct}%)"
+            send_photo(photo_bytes, caption)
+            sent += 1
+
+    if sent == 0:
+        return "⚠️ Encontré resultados pero no pude descargar las fotos."
+    return None  # las fotos ya fueron enviadas
+
+
+def cmd_indexarfotos():
+    """/indexarfotos — indexa (o actualiza) las fotos de Nextcloud en segundo plano."""
+    def _progress(done, total, filename):
+        send(f"📸 Indexando... {done}/{total} — {filename}")
+
+    def _run():
+        try:
+            result = run_indexing(progress_callback=_progress)
+            send(
+                f"✅ Indexación completada.\n"
+                f"  Total en Nextcloud: {result['total']}\n"
+                f"  Nuevas indexadas: {result['new']}\n"
+                f"  Fallos: {result['failed']}"
+            )
+        except Exception as e:
+            send(f"⚠️ Error durante la indexación: {e}")
+
+    threading.Thread(target=_run, daemon=True).start()
+    return "📸 Iniciando indexación en segundo plano...\n(recibirás actualizaciones de progreso)"
+
+
 def cmd_resume():
-    """Genera el briefing completo ahora mismo."""
-    send("🌅 Generando briefing... (puede tardar varios minutos)")
+    send("🌅 Generando briefing...")
     emails   = get_emails()
     events   = get_calendar_events()
     tasks    = get_tasks()
     articles = get_news()
-
-    prompt  = build_prompt(emails, events, tasks, articles, resumen_medicinas())
-    summary = ask_ollama(prompt)
-
-    if not summary:
-        summary = "⚠️ No se pudo generar el resumen. Revisa que Ollama esté corriendo."
-
-    return f"🌅 Ludext — {datetime.now().strftime('%A %d/%m/%Y')}\n\n{summary}"
+    return build_briefing(emails, events, tasks, articles, resumen_medicinas())
 
 def handle(text):
     """Enruta el comando al handler correspondiente."""
@@ -349,6 +529,7 @@ def handle(text):
         "/editarevent":  lambda: cmd_editarevent(args),
         "/medicinas":    lambda: cmd_medicinas(),
         "/medicina":     lambda: cmd_medicina(args),
+        "/graficomedicinas": lambda: cmd_graficomedicinas(args),
         "/compra":       lambda: cmd_compra(args),
         "/comprado":     lambda: cmd_comprado(args),
         "/vaciarcompra": lambda: vaciar(),
@@ -356,11 +537,17 @@ def handle(text):
         "/taller":       lambda: cmd_taller(args),
         "/recambio":     lambda: cmd_recambio(args),
         "/coche":        lambda: cmd_coche(args),
+        "/graficocoche": lambda: cmd_graficocoche(args),
         "/wishlist":     lambda: cmd_wishlist(),
         "/wish":         lambda: cmd_wish(args),
         "/unwish":       lambda: cmd_unwish(args),
+        "/novia":        lambda: cmd_novia(),
+        "/regalo":       lambda: cmd_regalo(args),
+        "/regalado":     lambda: cmd_regalado(args),
         "/pi":           lambda: cmd_pi(),
         "/red":          lambda: cmd_red(),
+        "/buscarfoto":   lambda: cmd_buscarfoto(args),
+        "/indexarfotos": lambda: cmd_indexarfotos(),
         "/correos":      lambda: cmd_correos(),
         "/resume":       lambda: cmd_resume(),
         "/ayuda":        lambda: AYUDA,
@@ -370,3 +557,26 @@ def handle(text):
 
     handler = routes.get(cmd)
     return handler() if handler else None
+
+def handle_callback(callback):
+    """
+    Gestiona el click de un botón inline.
+    Formato de callback_data: "med:<nombre>" para marcar una medicina.
+    """
+    data       = callback.get("data", "")
+    message_id = callback.get("message", {}).get("message_id")
+
+    if not data.startswith("med:"):
+        _answer_callback(callback["id"])
+        return
+
+    nombre = data[len("med:"):]
+    try:
+        _, msg = marcar_tomada(nombre)
+    except Exception as e:
+        msg = f"⚠️ Error: {e}"
+    _answer_callback(callback["id"], msg)
+
+    # Actualiza el mensaje original: estado al día y solo botones de las pendientes
+    if message_id:
+        _edit_message(message_id, resumen_medicinas(), teclado_medicinas())
