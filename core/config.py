@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# config.py — Lee las credenciales del archivo .env
+# config.py: Lee las credenciales del archivo .env
 # ─────────────────────────────────────────────────────────
 
 import os

@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# indexer.py — Indexa fotos de Nextcloud usando CLIP
+# indexer.py: Indexa fotos de Nextcloud usando CLIP
 # Almacenamiento: numpy array + JSON (sin Docker)
 # ─────────────────────────────────────────────────────────
 

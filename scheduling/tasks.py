@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# tasks.py — Tareas en Nextcloud Decs
+# tasks.py: Tareas en Nextcloud Decs
 # ─────────────────────────────────────────────────────────
 
 import uuid

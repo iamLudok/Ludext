@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# wishlist.py — Lista de deseos en Nextcloud Notes
+# wishlist.py: Lista de deseos en Nextcloud Notes
 # ─────────────────────────────────────────────────────────
 
 import json

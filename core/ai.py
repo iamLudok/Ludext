@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# ai.py — Formateador del briefing diario
+# ai.py: Formateador del briefing diario
 # ─────────────────────────────────────────────────────────
 
 from datetime import datetime, timezone
@@ -17,7 +17,7 @@ def _seccion_correos(emails):
         return ["📧 Correos: Sin correos no leídos."]
     lines = ["📧 Correos no leídos:"]
     for e in emails[:10]:
-        lines.append(f"  • {e['from'][:50]} — {e['subject'][:80]}")
+        lines.append(f"  • {e['from'][:50]}: {e['subject'][:80]}")
     return lines
 
 def _seccion_agenda(events):
@@ -49,7 +49,7 @@ def _seccion_noticias(articles):
             fecha   = f"{dt.day} {_MESES[dt.month - 1]}"
         else:
             fecha = ""
-        header = f"  • {feed}{fecha} — {a['title']}" if fecha else f"  • {feed}{a['title']}"
+        header = f"  • {feed}{fecha}: {a['title']}" if fecha else f"  • {feed}{a['title']}"
         lines.append(header)
         if a.get("summary"):
             lines.append(f"    {a['summary'][:150]}")
@@ -57,7 +57,7 @@ def _seccion_noticias(articles):
 
 
 def build_briefing(emails, events, tasks, articles, medicinas=""):
-    sections  = [f"🌅 Ludext — {_fecha_es(datetime.now())}", ""]
+    sections  = [f"🌅 Ludext: {_fecha_es(datetime.now())}", ""]
     sections += _seccion_correos(emails) + [""]
     sections += _seccion_agenda(events)  + [""]
     sections += _seccion_tareas(tasks)   + [""]

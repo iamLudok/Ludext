@@ -1,14 +1,14 @@
 # ─────────────────────────────────────────────────────────
-# monitor.py — Monitor de sistema de la Raspberry Pi
+# monitor.py: Monitor de sistema de la Raspberry Pi
 # ─────────────────────────────────────────────────────────
 
 import subprocess
 from pathlib import Path
 
-TEMP_CRITICA = 80.0   # °C — alerta roja
-TEMP_AVISO   = 70.0   # °C — alerta amarilla
-RAM_AVISO    = 85.0   # % — alerta si supera este uso
-DISCO_AVISO  = 90.0   # % — alerta si supera este uso
+TEMP_CRITICA = 80.0   # °C: alerta roja
+TEMP_AVISO   = 70.0   # °C: alerta amarilla
+RAM_AVISO    = 85.0   # %: alerta si supera este uso
+DISCO_AVISO  = 90.0   # %: alerta si supera este uso
 
 def _temperatura():
     """
@@ -70,7 +70,7 @@ def _uptime():
         partes.append(f"{minutos}m")
         return " ".join(partes)
     except Exception:
-        return "—"
+        return "-"
 
 def estado_sistema():
     """
@@ -81,21 +81,21 @@ def estado_sistema():
     disco_total, disco_usado, disco_pct = _disco()
     uptime                              = _uptime()
 
-    if temp is None:            temp_str = "—"
+    if temp is None:            temp_str = "-"
     elif temp >= TEMP_CRITICA:  temp_str = f"{temp} °C  ⚠️ CRÍTICA"
     elif temp >= TEMP_AVISO:    temp_str = f"{temp} °C  ⚠️ alta"
     else:                       temp_str = f"{temp} °C  ✅"
 
-    if ram_pct is None:        ram_str = "—"
+    if ram_pct is None:        ram_str = "-"
     elif ram_pct >= RAM_AVISO: ram_str = f"{ram_usada} / {ram_total} MB  ({ram_pct}%)  ⚠️"
     else:                      ram_str = f"{ram_usada} / {ram_total} MB  ({ram_pct}%)  ✅"
 
-    if disco_pct is None:          disco_str = "—"
+    if disco_pct is None:          disco_str = "-"
     elif disco_pct >= DISCO_AVISO: disco_str = f"{disco_usado} / {disco_total} GB  ({disco_pct}%)  ⚠️"
     else:                          disco_str = f"{disco_usado} / {disco_total} GB  ({disco_pct}%)  ✅"
 
     return (
-        f"🖥️ Sistema — Raspberry Pi\n\n"
+        f"🖥️ Sistema: Raspberry Pi\n\n"
         f"🌡️ CPU:    {temp_str}\n"
         f"💾 RAM:    {ram_str}\n"
         f"💿 Disco:  {disco_str}\n"
@@ -111,9 +111,9 @@ def alertas_sistema():
     temp = _temperatura()
     if temp is not None:
         if temp >= TEMP_CRITICA:
-            alertas.append(f"🌡️ ALERTA: CPU a {temp} °C — temperatura crítica en la Raspberry Pi")
+            alertas.append(f"🌡️ ALERTA: CPU a {temp} °C: temperatura crítica en la Raspberry Pi")
         elif temp >= TEMP_AVISO:
-            alertas.append(f"🌡️ Aviso: CPU a {temp} °C — temperatura alta en la Raspberry Pi")
+            alertas.append(f"🌡️ Aviso: CPU a {temp} °C: temperatura alta en la Raspberry Pi")
 
     _, _, ram_pct = _ram()
     if ram_pct is not None and ram_pct >= RAM_AVISO:

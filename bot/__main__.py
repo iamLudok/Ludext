@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# __main__.py — Entry point: polling de Telegram y arranque de hilos
+# __main__.py: Entry point: polling de Telegram y arranque de hilos
 # ─────────────────────────────────────────────────────────
 
 import time
@@ -37,7 +37,7 @@ def _procesar(text):
 
 def main():
     print("=" * 50)
-    print(f"🤖 Bot Ludext iniciado — {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    print(f"🤖 Bot Ludext iniciado: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
     print("Esperando comandos de Telegram...")
     print("=" * 50)
 

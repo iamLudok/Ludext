@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# medicine.py — Control de medicación diaria en Nextcloud Notes
+# medicine.py: Control de medicación diaria en Nextcloud Notes
 # ─────────────────────────────────────────────────────────
 
 from datetime import date, timedelta
@@ -142,7 +142,7 @@ def resumen_medicinas():
     lineas = ["💊 Medicinas de hoy:"]
     for m in medicinas:
         estado = "✅" if m["tomada"] else "⏳"
-        lineas.append(f"  {estado} {m['nombre']} — {m['hora']}")
+        lineas.append(f"  {estado} {m['nombre']} ({m['hora']})")
     return "\n".join(lineas)
 
 def pendientes_en_hora(hora_actual):
@@ -268,7 +268,7 @@ def grafico_adherencia(n_dias=30):
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    ax.set_title(f"Medicinas — últimos {n_dias} días",
+    ax.set_title(f"Medicinas: últimos {n_dias} días",
                  color="#0b0b0b", fontsize=13, pad=12, loc="left")
 
     leyenda = [

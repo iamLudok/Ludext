@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# sources.py — Datos de Gmail, Nextcloud y noticias
+# sources.py: Datos de Gmail, Nextcloud y noticias
 # ─────────────────────────────────────────────────────────
 
 import imaplib

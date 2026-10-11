@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# events.py — Eventos en Nextcloud Calendar
+# events.py: Eventos en Nextcloud Calendar
 # ─────────────────────────────────────────────────────────
 
 import uuid

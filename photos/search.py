@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# search.py — Búsqueda semántica de fotos con CLIP + numpy
+# search.py: Búsqueda semántica de fotos con CLIP + numpy
 # ─────────────────────────────────────────────────────────
 
 import numpy as np

@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# api.py — Interfaz con Nextcloud Notes
+# api.py: Interfaz con Nextcloud Notes
 # ─────────────────────────────────────────────────────────
 
 import threading

@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# calendar — Conexión compartida con Nextcloud CalDAV
+# calendar: Conexión compartida con Nextcloud CalDAV
 # ─────────────────────────────────────────────────────────
 
 from caldav import DAVClient

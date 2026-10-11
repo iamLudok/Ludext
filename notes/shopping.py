@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# shopping.py — Lista de la compra en Nextcloud Notes
+# shopping.py: Lista de la compra en Nextcloud Notes
 # ─────────────────────────────────────────────────────────
 
 from .api import obtener_o_crear_nota, actualizar_nota, atomico

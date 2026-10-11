@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# car.py — Gastos del coche en Nextcloud Notes
+# car.py: Gastos del coche en Nextcloud Notes
 # ─────────────────────────────────────────────────────────
 
 import io
@@ -89,7 +89,7 @@ def registrar_taller(descripcion, importe):
         hoy = str(date.today())
         lineas.append(f"{hoy},taller,{descripcion},{importe}")
         _guardar(nota_id, lineas)
-        return True, f"🔧 Taller registrado: {descripcion} — {importe}€"
+        return True, f"🔧 Taller registrado: {descripcion} ({importe}€)"
     except Exception as e:
         return False, f"⚠️ Error: {e}"
 
@@ -103,7 +103,7 @@ def registrar_recambio(descripcion, importe):
         hoy = str(date.today())
         lineas.append(f"{hoy},recambio,{descripcion},{importe}")
         _guardar(nota_id, lineas)
-        return True, f"🛒 Recambio registrado: {descripcion} — {importe}€"
+        return True, f"🛒 Recambio registrado: {descripcion} ({importe}€)"
     except Exception as e:
         return False, f"⚠️ Error: {e}"
 
@@ -150,7 +150,7 @@ def resumen(mes=None):
             elif d < 0: return f" ({d}€)"
             return ""
 
-        lineas_out = [f"🚗 Gastos del coche — {mes}"]
+        lineas_out = [f"🚗 Gastos del coche: {mes}"]
 
         if actual["n_gastos"] == 0:
             lineas_out.append("  Sin gastos registrados este mes.")
@@ -237,7 +237,7 @@ def grafico_gastos(n_meses=6):
     ax.yaxis.grid(True, color="#e1e0d9", linewidth=1)
     ax.set_axisbelow(True)
 
-    ax.set_title(f"Gastos del coche — últimos {n_meses} meses", color="#0b0b0b", fontsize=13, pad=15)
+    ax.set_title(f"Gastos del coche: últimos {n_meses} meses", color="#0b0b0b", fontsize=13, pad=15)
     ax.legend(loc="upper left", frameon=False, labelcolor="#52514e")
 
     fig.tight_layout()

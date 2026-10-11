@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "================================================"
-echo "  Ludext — Private Morning Briefing"
+echo "  Ludext: Private Morning Briefing"
 echo "================================================"
 echo ""
 echo "Requirements: Nextcloud with Calendar, News and Notes apps installed."
@@ -60,7 +60,7 @@ echo "🤖 Installing Telegram bot service..."
 SERVICE_FILE="/etc/systemd/system/ludext-bot.service"
 sudo tee "$SERVICE_FILE" > /dev/null <<EOF
 [Unit]
-Description=Ludext Bot — Telegram task and event manager
+Description=Ludext Bot: Telegram task and event manager
 After=network.target
 
 [Service]

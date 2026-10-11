@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# ludext.py — Script principal
+# ludext.py: Script principal
 # ─────────────────────────────────────────────────────────
 
 import os
@@ -38,7 +38,7 @@ def send_telegram(message):
 
 def main():
     print("=" * 50)
-    print(f"🌅 LUDEXT — {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    print(f"🌅 LUDEXT: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
     print("=" * 50)
 
     # Paso 1: Recoger todos los datos del día

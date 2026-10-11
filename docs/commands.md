@@ -1,4 +1,4 @@
-# Telegram Bot — Command Reference
+# Telegram Bot: Command Reference
 
 ## Tasks
 
@@ -58,6 +58,22 @@
 | `/wish <name> \| <url>` | Add a product with its link |
 | `/unwish <name>` | Remove a product |
 
+## Gift Ideas
+
+| Command | Description |
+|---|---|
+| `/regalos` | Show your gift ideas |
+| `/regalo <name>` | Add a gift idea |
+| `/regalo <name> \| <url>` | Add a gift idea with its link |
+| `/regalado <name>` | Mark a gift as bought and remove it |
+
+## Photo Search
+
+| Command | Description |
+|---|---|
+| `/buscarfoto <text>` | Find the 3 photos that best match a natural-language description |
+| `/indexarfotos` | Index new photos from Nextcloud (runs in the background, reports progress) |
+
 ## System & Network
 
 | Command | Description |
@@ -71,7 +87,7 @@
 |---|---|
 | `/correos` | Summarize unread emails right now |
 | `/resume` | Generate the full briefing on demand |
-| `/ayuda` | Show all available commands |
+| `/ayuda` | Show all available commands (also `/start`, `/help`) |
 
 ## Automatic Alerts
 

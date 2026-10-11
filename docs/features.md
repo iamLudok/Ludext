@@ -1,4 +1,4 @@
-# Features — Detailed Documentation
+# Features: Detailed Documentation
 
 ## Medication Reminders
 
@@ -8,8 +8,8 @@ Ludext tracks your medicines and reminds you to take them via Telegram. All conf
 
 On first run, Ludext automatically creates two notes in Nextcloud:
 
-- **"Medicinas Config"** — one medicine per line, edit this to add or remove medicines
-- **"Medicinas"** — daily history of what you've taken (managed automatically)
+- **"Medicinas Config"**: one medicine per line, edit this to add or remove medicines
+- **"Medicinas"**: daily history of what you've taken (managed automatically)
 
 The format in "Medicinas Config" is:
 
@@ -25,7 +25,7 @@ MiMedicina,1,08:00,09:30,13:00
 
 | Field | Description |
 |---|---|
-| `nombre` | Medicine name — used in `/medicina <name>` |
+| `nombre` | Medicine name: used in `/medicina <name>` |
 | `cada_dias` | `1` = every day, `2` = every other day, etc. |
 | `hora_toma` | Time you should take it (shown in the daily briefing) |
 | `aviso1`, `aviso2`... | Times to send a Telegram alert if not yet taken |
@@ -78,12 +78,45 @@ The wishlist is stored in a Nextcloud Note called **"Wishlist"**, accessible fro
 
 ---
 
+## Gift Ideas
+
+Gift ideas are stored in a Nextcloud Note called **"Regalos"**, accessible from any device.
+
+```
+/regalos                                     → show your gift ideas
+/regalo Libro de cocina | https://…          → add an idea with its link
+/regalado Libro                              → bought it, remove from the list
+```
+
+---
+
+## Photo Search
+
+Ludext can search the photos in your Nextcloud `Photos` folder by describing them in natural language. It uses [CLIP](https://openai.com/research/clip) (`clip-ViT-B-32` via `sentence-transformers`), which runs entirely on the Pi.
+
+```
+/indexarfotos                      → index new photos (first run downloads the model)
+/buscarfoto boarding pass iceland  → sends the 3 best matches with their similarity score
+```
+
+- Photos are downloaded over WebDAV, turned into embeddings, and stored in `photos_db/` (git-ignored). The photos themselves are not copied.
+- Re-running `/indexarfotos` only processes new photos.
+- The first index of a large library can take a long time on a Pi; progress is reported in Telegram.
+
+---
+
+## Event Reminders
+
+The bot checks your Nextcloud calendar every minute and sends a Telegram notification about 30 minutes before each event starts.
+
+---
+
 ## System Monitor
 
 The `/pi` command shows the current state of the Raspberry Pi:
 
 ```
-🖥️ Sistema — Raspberry Pi
+🖥️ Sistema: Raspberry Pi
 
 🌡️ CPU:    52.3 °C  ✅
 💾 RAM:    1823 / 3828 MB  (47.6%)  ✅
@@ -91,7 +124,7 @@ The `/pi` command shows the current state of the Raspberry Pi:
 ⏱️ Uptime: 3d 14h 22m
 ```
 
-The bot also monitors the system every 5 minutes in the background and sends an automatic Telegram alert if any threshold is exceeded. Thresholds are configurable at the top of `sistema.py`:
+The bot also monitors the system every 5 minutes in the background and sends an automatic Telegram alert if any threshold is exceeded. Thresholds are configurable at the top of [system/monitor.py](../system/monitor.py):
 
 | Variable | Default | Description |
 |---|---|---|

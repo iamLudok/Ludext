@@ -1,11 +1,11 @@
 # ─────────────────────────────────────────────────────────
-# gf_gifts.py — Lista de ideas de regalo para la novia
+# gifts.py: Lista de ideas de regalo
 # ─────────────────────────────────────────────────────────
 
 import json
 from .api import obtener_o_crear_nota, actualizar_nota, atomico
 
-TITULO_NOTA = "Regalos Novia"
+TITULO_NOTA = "Regalos"
 
 def _cargar():
     nota = obtener_o_crear_nota(TITULO_NOTA, "[]")
@@ -25,9 +25,9 @@ def listar_regalos():
         return f"⚠️ Error al leer la lista: {e}"
 
     if not items:
-        return "💝 La lista de regalos para la novia está vacía.\nUsa /regalo <nombre> para añadir una idea."
+        return "💝 La lista de ideas de regalo está vacía.\nUsa /regalo <nombre> para añadir una idea."
 
-    lineas = [f"💝 Ideas de regalo para la novia ({len(items)}):"]
+    lineas = [f"💝 Ideas de regalo ({len(items)}):"]
     for item in items:
         url_line = f"\n    🔗 {item['url']}" if item.get("url") else ""
         lineas.append(f"\n  • {item['nombre']}{url_line}")

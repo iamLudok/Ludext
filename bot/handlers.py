@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# handlers.py — Función send(), parsers y handlers de comandos
+# handlers.py: Función send(), parsers y handlers de comandos
 # ─────────────────────────────────────────────────────────
 
 import requests
@@ -19,74 +19,74 @@ from notes.car import registrar_gasolina, registrar_taller, registrar_recambio, 
 from system.network import dispositivos_conectados
 from system.monitor import estado_sistema
 from notes.wishlist import añadir_wish, listar_wish, borrar_wish
-from notes.gf_gifts import añadir_regalo, listar_regalos, borrar_regalo
+from notes.gifts import añadir_regalo, listar_regalos, borrar_regalo
 
 BASE_URL = f"https://api.telegram.org/bot{CONFIG['telegram_token']}"
 CHAT_ID  = str(CONFIG["telegram_chat_id"])
 AYUDA = """🤖 Comandos disponibles:
 
 📋 TAREAS
-/tareas — lista tus tareas pendientes
-/nueva <título> — crea una tarea
-/nueva <título> <dd/mm> — con fecha de vencimiento
-/borrar <título> — elimina una tarea
-/editar <viejo> | <nuevo> — renombra una tarea
+/tareas: lista tus tareas pendientes
+/nueva <título>: crea una tarea
+/nueva <título> <dd/mm>: con fecha de vencimiento
+/borrar <título>: elimina una tarea
+/editar <viejo> | <nuevo>: renombra una tarea
 
 📅 EVENTOS
-/agenda — muestra eventos de hoy y mañana
-/evento <título> <dd/mm> — crea evento (día completo)
-/evento <título> <dd/mm> <HH:MM> — crea evento con hora
-/borrarevent <título> — elimina un evento
-/editarevent <viejo> | <nuevo> — renombra un evento
+/agenda: muestra eventos de hoy y mañana
+/evento <título> <dd/mm>: crea evento (día completo)
+/evento <título> <dd/mm> <HH:MM>: crea evento con hora
+/borrarevent <título>: elimina un evento
+/editarevent <viejo> | <nuevo>: renombra un evento
 
 💊 MEDICINAS
-/medicinas — estado de hoy, con botones para marcar
-/medicina <nombre> — marca una medicina como tomada
-/graficomedicinas — gráfico de adherencia (30 días)
-/graficomedicinas <días> — gráfico de los últimos N días
+/medicinas: estado de hoy, con botones para marcar
+/medicina <nombre>: marca una medicina como tomada
+/graficomedicinas: gráfico de adherencia (30 días)
+/graficomedicinas <días>: gráfico de los últimos N días
 (los avisos llegan con botón "✅ He tomado...")
 
 🎁 WISHLIST
-/wishlist — ver tu lista de deseos
-/wish <nombre> | <url> — añadir producto
-/unwish <nombre> — eliminar producto
+/wishlist: ver tu lista de deseos
+/wish <nombre> | <url>: añadir producto
+/unwish <nombre>: eliminar producto
 
-💝 REGALOS NOVIA
-/novia — ver la lista de ideas de regalo
-/regalo <nombre> — añadir una idea
-/regalo <nombre> | <url> — añadir idea con enlace
-/regalado <nombre> — marcar como comprado y eliminar
+💝 IDEAS DE REGALO
+/regalos: ver la lista de ideas de regalo
+/regalo <nombre>: añadir una idea
+/regalo <nombre> | <url>: añadir idea con enlace
+/regalado <nombre>: marcar como comprado y eliminar
 
 🛒 LISTA DE LA COMPRA
-/compra — muestra la lista
-/compra <artículo> — añade un artículo
-/comprado <artículo> — elimina un artículo
-/vaciarcompra — vacía la lista entera
+/compra: muestra la lista
+/compra <artículo>: añade un artículo
+/comprado <artículo>: elimina un artículo
+/vaciarcompra: vacía la lista entera
 
 🖥️ SISTEMA
-/pi — estado del sistema (CPU, RAM, disco, uptime)
+/pi: estado del sistema (CPU, RAM, disco, uptime)
 
 📡 RED
-/red — dispositivos conectados al router
+/red: dispositivos conectados al router
 
 🚗 GASTOS DEL COCHE
-/gasolina <litros> <precio/L> — registra un repostaje
-/taller <descripción> <importe> — gasto en taller
-/recambio <descripción> <importe> — compra personal
-/coche — resumen del mes actual
-/coche <YYYY-MM> — resumen de un mes concreto
-/graficocoche — gráfico de gastos (últimos 6 meses)
-/graficocoche <meses> — gráfico de los últimos N meses
+/gasolina <litros> <precio/L>: registra un repostaje
+/taller <descripción> <importe>: gasto en taller
+/recambio <descripción> <importe>: compra personal
+/coche: resumen del mes actual
+/coche <YYYY-MM>: resumen de un mes concreto
+/graficocoche: gráfico de gastos (últimos 6 meses)
+/graficocoche <meses>: gráfico de los últimos N meses
 
 📷 FOTOS
-/buscarfoto <texto> — busca fotos por descripción natural
-/indexarfotos — indexa (o actualiza) las fotos de Nextcloud
+/buscarfoto <texto>: busca fotos por descripción natural
+/indexarfotos: indexa (o actualiza) las fotos de Nextcloud
 
 📬 RESUMEN
-/correos — resumen de correos no leídos
-/resume — genera el briefing completo ahora
+/correos: resumen de correos no leídos
+/resume: genera el briefing completo ahora
 
-/ayuda — muestra este mensaje"""
+/ayuda: muestra este mensaje"""
 
 def _post_con_reintentos(endpoint, intentos=3, **kwargs):
     """
@@ -272,7 +272,7 @@ def cmd_correos():
         return "📧 No tienes correos no leídos."
     lineas = ["📧 Correos no leídos:"]
     for e in emails:
-        lineas.append(f"  • {e['from'][:50]} — {e['subject'][:80]}")
+        lineas.append(f"  • {e['from'][:50]}: {e['subject'][:80]}")
     return "\n".join(lineas)
 
 def teclado_medicinas():
@@ -301,7 +301,7 @@ def cmd_medicinas():
 
 def cmd_medicina(args):
     """
-    /medicina <nombre> — marca una medicina como tomada.
+    /medicina <nombre>: marca una medicina como tomada.
     También acepta /medicina sola para mostrar el resumen.
     """
     if not args:
@@ -331,31 +331,31 @@ def cmd_graficomedicinas(args):
     if not png:
         return "💊 No hay medicinas configuradas en la nota 'Medicinas Config'."
 
-    send_photo(png, caption=f"💊 Adherencia de medicinas — últimos {n_dias} días")
+    send_photo(png, caption=f"💊 Adherencia de medicinas: últimos {n_dias} días")
     return None
 
 def cmd_wish(args):
-    """/wish <nombre> | <url> — añade un producto a la wishlist."""
+    """/wish <nombre> | <url>: añade un producto a la wishlist."""
     return añadir_wish(args)
 
 def cmd_wishlist():
-    """/wishlist — muestra la wishlist."""
+    """/wishlist: muestra la wishlist."""
     return listar_wish()
 
 def cmd_unwish(args):
-    """/unwish <nombre> — elimina un producto de la wishlist."""
+    """/unwish <nombre>: elimina un producto de la wishlist."""
     return borrar_wish(args)
 
-def cmd_novia():
-    """/novia — muestra la lista de regalos para la novia."""
+def cmd_regalos():
+    """/regalos: muestra la lista de ideas de regalo."""
     return listar_regalos()
 
 def cmd_regalo(args):
-    """/regalo <nombre> o /regalo <nombre> | <url> — añade una idea de regalo."""
+    """/regalo <nombre> o /regalo <nombre> | <url>: añade una idea de regalo."""
     return añadir_regalo(args)
 
 def cmd_regalado(args):
-    """/regalado <nombre> — elimina un regalo de la lista (ya comprado)."""
+    """/regalado <nombre>: elimina un regalo de la lista (ya comprado)."""
     if not args:
         return "⚠️ Uso: /regalado <nombre>"
     return borrar_regalo(args)
@@ -370,7 +370,7 @@ def cmd_compra(args):
     return añadir(args)
 
 def cmd_comprado(args):
-    """/comprado <item> — elimina un artículo de la lista."""
+    """/comprado <item>: elimina un artículo de la lista."""
     if not args:
         return "⚠️ Uso: /comprado <artículo>"
     return comprado(args)
@@ -451,11 +451,11 @@ def cmd_graficocoche(args):
     if not png:
         return "📊 No hay gastos registrados en ese periodo."
 
-    send_photo(png, caption=f"🚗 Gastos del coche — últimos {n_meses} meses")
+    send_photo(png, caption=f"🚗 Gastos del coche: últimos {n_meses} meses")
     return None
 
 def cmd_buscarfoto(query: str):
-    """/buscarfoto <texto> — busca fotos por descripción natural."""
+    """/buscarfoto <texto>: busca fotos por descripción natural."""
     if not query:
         return "⚠️ Uso: /buscarfoto <descripción>\nEjemplo: /buscarfoto boarding pass islandia"
 
@@ -483,9 +483,9 @@ def cmd_buscarfoto(query: str):
 
 
 def cmd_indexarfotos():
-    """/indexarfotos — indexa (o actualiza) las fotos de Nextcloud en segundo plano."""
+    """/indexarfotos: indexa (o actualiza) las fotos de Nextcloud en segundo plano."""
     def _progress(done, total, filename):
-        send(f"📸 Indexando... {done}/{total} — {filename}")
+        send(f"📸 Indexando... {done}/{total}: {filename}")
 
     def _run():
         try:
@@ -541,7 +541,7 @@ def handle(text):
         "/wishlist":     lambda: cmd_wishlist(),
         "/wish":         lambda: cmd_wish(args),
         "/unwish":       lambda: cmd_unwish(args),
-        "/novia":        lambda: cmd_novia(),
+        "/regalos":      lambda: cmd_regalos(),
         "/regalo":       lambda: cmd_regalo(args),
         "/regalado":     lambda: cmd_regalado(args),
         "/pi":           lambda: cmd_pi(),

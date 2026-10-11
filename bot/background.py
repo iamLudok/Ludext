@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# background.py — Hilos de fondo: alertas, medicinas, sistema
+# background.py: Hilos de fondo: alertas, medicinas, sistema
 # ─────────────────────────────────────────────────────────
 
 import time

@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# network.py — Dispositivos conectados a la red local
+# network.py: Dispositivos conectados a la red local
 # ─────────────────────────────────────────────────────────
 
 import json
@@ -146,7 +146,7 @@ def dispositivos_conectados():
     for d in dispositivos:
         mac      = d["mac"].upper() if d["mac"] else ""
         etiqueta = nombres_mac.get(mac) or nombres_ip.get(d["ip"]) or d["hostname"] or ""
-        mac_str  = mac or "—"
+        mac_str  = mac or "-"
         lineas.append(f"\n  • {d['ip']}" + (f"  ({etiqueta})" if etiqueta else ""))
         lineas.append(f"    MAC: {mac_str}")
 
