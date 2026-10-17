@@ -2,11 +2,11 @@
 
 ## Medication Reminders
 
-Ludext tracks your medicines and reminds you to take them via Telegram. All configuration and history is stored in **Nextcloud Notes**, so you can view and edit it from any device.
+Ludok Home tracks your medicines and reminds you to take them via Telegram. All configuration and history is stored in **Nextcloud Notes**, so you can view and edit it from any device.
 
 ### Setup
 
-On first run, Ludext automatically creates two notes in Nextcloud:
+On first run, Ludok Home automatically creates two notes in Nextcloud:
 
 - **"Medicinas Config"**: one medicine per line, edit this to add or remove medicines
 - **"Medicinas"**: daily history of what you've taken (managed automatically)
@@ -35,7 +35,7 @@ MiMedicina,1,08:00,09:30,13:00
 - The daily briefing includes which medicines you need to take that day
 - Send `/medicina MiMedicina` to mark it as taken
 - At each alert time, if the medicine hasn't been marked, you get a Telegram reminder
-- For every-other-day medicines, Ludext automatically calculates which days it's due based on your history
+- For every-other-day medicines, Ludok Home automatically calculates which days it's due based on your history
 
 ---
 

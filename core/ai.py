@@ -47,7 +47,7 @@ def _seccion_noticias(articles, con_audio=False):
 
 
 def build_briefing(events, tasks, articles, medicinas="", con_audio=False):
-    sections  = [f"🌅 Ludext: {_fecha_es(datetime.now())}", ""]
+    sections  = [f"🌅 Ludok Home: {_fecha_es(datetime.now())}", ""]
     sections += _seccion_agenda(events)  + [""]
     sections += _seccion_tareas(tasks)   + [""]
     if medicinas:

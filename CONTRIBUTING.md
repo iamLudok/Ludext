@@ -1,11 +1,11 @@
-# Contributing to Ludext
+# Contributing to Ludok Home
 
-Thanks for your interest in Ludext! It's a personal project, but contributions are welcome.
+Thanks for your interest in Ludok Home! It's a personal project, but contributions are welcome.
 
 ## Ways to Contribute
 
 - **Code changes**: send a pull request directly. Fixes, improvements and new features are all welcome as PRs.
-- **Bugs and ideas**: if you found something that doesn't work, or have an idea but don't want to code it, open a public [issue](https://github.com/iamLudok/Ludext/issues).
+- **Bugs and ideas**: if you found something that doesn't work, or have an idea but don't want to code it, open a public [issue](https://github.com/iamLudok/Ludok-home/issues).
 - **Security vulnerabilities**: never in a public issue. Report them privately as explained in [SECURITY.md](SECURITY.md).
 
 Before posting logs or screenshots, **remove any personal data**: emails, tokens, chat IDs, IP and MAC addresses, Nextcloud URLs.
@@ -15,8 +15,8 @@ Before posting logs or screenshots, **remove any personal data**: emails, tokens
 You don't need a Raspberry Pi to develop. Any Linux machine with Python 3.11+ and access to a Nextcloud instance works.
 
 ```bash
-git clone https://github.com/iamLudok/Ludext.git
-cd Ludext
+git clone https://github.com/iamLudok/Ludok-home.git
+cd Ludok-home
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -28,7 +28,7 @@ Use a **separate Telegram bot** for testing, so you don't mix it up with your re
 Run the pieces you're working on:
 
 ```bash
-python3 ludext.py --debug   # generate the briefing into ludext_briefing.txt
+python3 briefing.py --debug   # generate the briefing into briefing.txt
 python3 -m bot              # start the Telegram bot in the foreground
 ```
 
@@ -43,7 +43,7 @@ python3 -m bot              # start the Telegram bot in the foreground
   ```
 - Credentials only come from `.env` through `core/config.py`. Never hardcode tokens, passwords, IPs or personal names.
 - Features that store data use **Nextcloud Notes** through `notes/api.py`. Wrap read-modify-write functions with `@atomico` so concurrent bot commands don't overwrite each other.
-- Keep dependencies minimal: Ludext has to run comfortably on a Raspberry Pi.
+- Keep dependencies minimal: Ludok Home has to run comfortably on a Raspberry Pi.
 
 ## Adding a Bot Command
 

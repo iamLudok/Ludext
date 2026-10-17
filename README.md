@@ -1,13 +1,13 @@
 <div align="center">
 
-# Ludext
+# Ludok Home
 
 **Your private morning briefing, self-hosted on a Raspberry Pi.**
 
 Calendar, tasks, medicines and news (as a voice note), delivered to Telegram every morning.<br>
 Your data lives on your own hardware. No subscriptions. No AI cloud services.
 
-[![License: MIT](https://img.shields.io/github/license/iamLudok/Ludext?style=flat-square&color=blue)](LICENSE)
+[![License: MIT](https://img.shields.io/github/license/iamLudok/Ludok-home?style=flat-square&color=blue)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%205-A22846?style=flat-square&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
 [![Nextcloud](https://img.shields.io/badge/Nextcloud-self--hosted-0082C9?style=flat-square&logo=nextcloud&logoColor=white)](https://nextcloud.com/)
@@ -21,7 +21,7 @@ Your data lives on your own hardware. No subscriptions. No AI cloud services.
 
 ## Table of Contents
 
-- [Why Ludext?](#why-ludext)
+- [Why Ludok Home?](#why-ludok-home)
 - [Tech Stack](#tech-stack)
 - [Features](#features)
 - [Requirements](#requirements)
@@ -33,13 +33,13 @@ Your data lives on your own hardware. No subscriptions. No AI cloud services.
 
 ---
 
-## Why Ludext?
+## Why Ludok Home?
 
-Most assistants send your personal data to external servers. Ludext is built around a different principle: **your data stays yours**.
+Most assistants send your personal data to external servers. Ludok Home is built around a different principle: **your data stays yours**.
 
 - 🏠 **Self-hosted data**: Nextcloud stores your calendar, tasks, notes, and news feeds on hardware you own and control.
 - 🔒 **Local processing**: the briefing is built on the Pi, the news audio is synthesized locally with Piper. No data is sent to AI or analytics providers.
-- 💸 **No subscriptions**: once set up, Ludext runs for free indefinitely.
+- 💸 **No subscriptions**: once set up, Ludok Home runs for free indefinitely.
 
 > **What does leave your network:** the briefing, news audio and bot replies are delivered through Telegram's servers (bot chats are not end-to-end encrypted). Everything else (calendar, tasks, notes, news) stays on your Nextcloud.
 
@@ -98,8 +98,8 @@ The bot only answers your own `TELEGRAM_CHAT_ID`; messages from anyone else are 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/iamLudok/Ludext.git ~/Ludext
-cd ~/Ludext
+git clone https://github.com/iamLudok/Ludok-home.git ~/Ludok-home
+cd ~/Ludok-home
 ```
 
 ### 2. Run the setup script
@@ -160,15 +160,15 @@ You only need to do this once. The commands persist on Telegram's side and survi
 ### 6. Test it
 
 ```bash
-source ~/ludext-env/bin/activate
-python3 ludext.py
+source ~/ludok-home-env/bin/activate
+python3 briefing.py
 ```
 
 Use `--debug` to save the generated briefing to a file:
 
 ```bash
-python3 ludext.py --debug
-cat ludext_briefing.txt
+python3 briefing.py --debug
+cat briefing.txt
 ```
 
 ---
@@ -176,11 +176,11 @@ cat ludext_briefing.txt
 ## Project Structure
 
 ```
-Ludext/
+Ludok-home/
 ├── .env.example            ← Template for .env
 ├── .gitignore              ← Excludes files from git
 ├── LICENSE                 ← MIT license
-├── ludext.py               ← Daily briefing script (runs via cron)
+├── briefing.py             ← Daily briefing script (runs via cron)
 ├── README.md               ← Project documentation
 ├── requirements.txt        ← Python dependencies
 ├── bot/
@@ -217,11 +217,11 @@ Ludext/
 ## Cron & Services
 
 ```bash
-crontab -l                                  # daily briefing schedule
-sudo systemctl status ludext-bot            # Telegram bot service
+crontab -l                                     # daily briefing schedule
+sudo systemctl status ludok-home-bot           # Telegram bot service
 
-cat ~/ludext.log                            # daily briefing logs
-journalctl -u ludext-bot -n 50 --no-pager  # bot logs
+cat ~/ludok-home.log                           # daily briefing logs
+journalctl -u ludok-home-bot -n 50 --no-pager  # bot logs
 ```
 
 ---
@@ -234,12 +234,12 @@ Pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the develo
 
 ## License
 
-Distributed under the **MIT License**. You are free to use, modify and share Ludext, including for commercial use, as long as you keep the copyright notice. See [LICENSE](LICENSE) for the full text.
+Distributed under the **MIT License**. You are free to use, modify and share Ludok Home, including for commercial use, as long as you keep the copyright notice. See [LICENSE](LICENSE) for the full text.
 
 ---
 
 <div align="center">
 
-Made by [Luken Iriondo](https://github.com/iamLudok) · If Ludext is useful to you, consider giving it a ⭐
+Made by [Luken Iriondo](https://github.com/iamLudok) · If Ludok Home is useful to you, consider giving it a ⭐
 
 </div>

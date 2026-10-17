@@ -53,7 +53,7 @@ def obtener_o_crear_nota(titulo, contenido_inicial=""):
     nota = buscar_nota(titulo)
     if nota:
         return nota
-    return _post("/notes", {"title": titulo, "content": contenido_inicial, "category": "Ludext"})
+    return _post("/notes", {"title": titulo, "content": contenido_inicial, "category": "Ludok Home"})
 
 def actualizar_nota(nota_id, contenido):
     """

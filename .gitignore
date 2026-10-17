@@ -8,7 +8,7 @@
 system/devices.json
 
 # Configuracion del bot
-deploy/ludext-bot.service
+deploy/ludok-home-bot.service
 
 # Ideas de futuras funcionalidades
 docs/ideas.md
@@ -21,4 +21,4 @@ __pycache__/
 voices/
 
 # Salida de depuración del briefing
-ludext_briefing.txt
+briefing.txt

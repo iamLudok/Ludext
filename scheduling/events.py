@@ -78,7 +78,7 @@ def crear_evento(titulo, fecha, hora=None):
 
         ical  = Calendar()
         event = Event()
-        event.add("uid",     str(uuid.uuid4()) + "@ludext")
+        event.add("uid",     str(uuid.uuid4()) + "@ludok-home")
         event.add("summary", titulo)
 
         if hora:

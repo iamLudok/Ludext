@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────
-# ludext.py: Script principal
+# briefing.py: Script principal
 # ─────────────────────────────────────────────────────────
 
 import os
@@ -58,7 +58,7 @@ def send_voice_telegram(audio, caption=""):
 
 def main():
     print("=" * 50)
-    print(f"🌅 LUDEXT: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    print(f"🌅 LUDOK HOME: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
     print("=" * 50)
 
     # Paso 1: Recoger todos los datos del día
@@ -75,7 +75,7 @@ def main():
 
     # Paso 4 (opcional): guardar el briefing para depuración
     if "--debug" in sys.argv:
-        debug_path = os.path.join(os.path.dirname(__file__), "ludext_briefing.txt")
+        debug_path = os.path.join(os.path.dirname(__file__), "briefing.txt")
         with open(debug_path, "w") as f:
             f.write(briefing)
         print(f"   📝 Briefing guardado en {debug_path}")
@@ -86,7 +86,7 @@ def main():
         send_voice_telegram(audio, "📰 Noticias de hoy")
 
     print("=" * 50)
-    print("✅ Ludext completado")
+    print("✅ Ludok Home completado")
 
 if __name__ == "__main__":
     main()

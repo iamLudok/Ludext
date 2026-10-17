@@ -37,7 +37,7 @@ def _procesar(text):
 
 def main():
     print("=" * 50)
-    print(f"🤖 Bot Ludext iniciado: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    print(f"🤖 Bot Ludok Home iniciado: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
     print("Esperando comandos de Telegram...")
     print("=" * 50)
 

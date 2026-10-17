@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "================================================"
-echo "  Ludext: Private Morning Briefing"
+echo "  Ludok Home: Private Morning Briefing"
 echo "================================================"
 echo ""
 echo "Requirements: Nextcloud with Calendar, News and Notes apps installed."
@@ -19,8 +19,8 @@ sudo apt-get install -y python3-pip python3-venv curl nmap ffmpeg
 # ── 2. Python virtual environment ───────────────
 echo ""
 echo "🐍 Creating Python virtual environment..."
-python3 -m venv "$HOME/ludext-env"
-source "$HOME/ludext-env/bin/activate"
+python3 -m venv "$HOME/ludok-home-env"
+source "$HOME/ludok-home-env/bin/activate"
 
 pip install --upgrade pip -q
 pip install -r "$SCRIPT_DIR/requirements.txt" -q
@@ -49,7 +49,7 @@ echo ""
 if [ ! -f "$SCRIPT_DIR/.env" ]; then
     cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
     echo "📝 .env file created from .env.example"
-    echo "   ⚠️  Edit .env with your credentials before running Ludext"
+    echo "   ⚠️  Edit .env with your credentials before running Ludok Home"
 else
     echo "   ℹ️  .env already exists, skipping"
 fi
@@ -58,27 +58,27 @@ fi
 echo ""
 echo "⏰ Setting up daily cron job (every day at 7:30)..."
 
-CRON_LINE="30 7 * * * $HOME/ludext-env/bin/python3 $SCRIPT_DIR/ludext.py >> $HOME/ludext.log 2>&1"
-(crontab -l 2>/dev/null | grep -v "ludext.py"; echo "$CRON_LINE") | crontab -
+CRON_LINE="30 7 * * * $HOME/ludok-home-env/bin/python3 $SCRIPT_DIR/briefing.py >> $HOME/ludok-home.log 2>&1"
+(crontab -l 2>/dev/null | grep -v "briefing.py"; echo "$CRON_LINE") | crontab -
 
 echo "   ✅ Cron configured: every day at 7:30"
-echo "   📝 Logs at: ~/ludext.log"
+echo "   📝 Logs at: ~/ludok-home.log"
 
 # ── 5. Telegram bot systemd service ─────────────
 echo ""
 echo "🤖 Installing Telegram bot service..."
 
-SERVICE_FILE="/etc/systemd/system/ludext-bot.service"
+SERVICE_FILE="/etc/systemd/system/ludok-home-bot.service"
 sudo tee "$SERVICE_FILE" > /dev/null <<EOF
 [Unit]
-Description=Ludext Bot: Telegram task and event manager
+Description=Ludok Home Bot: Telegram task and event manager
 After=network.target
 
 [Service]
 User=$USER
 WorkingDirectory=$SCRIPT_DIR
 Environment=PYTHONUNBUFFERED=1
-ExecStart=$HOME/ludext-env/bin/python3 -m bot
+ExecStart=$HOME/ludok-home-env/bin/python3 -m bot
 Restart=always
 RestartSec=10
 
@@ -87,8 +87,8 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable ludext-bot
-sudo systemctl start ludext-bot
+sudo systemctl enable ludok-home-bot
+sudo systemctl start ludok-home-bot
 
 echo "   ✅ Bot service installed and started"
 
@@ -106,12 +106,12 @@ echo "  2. Label your network devices (optional):"
 echo "     nano $SCRIPT_DIR/system/devices.json"
 echo ""
 echo "  3. Test the briefing manually:"
-echo "     source ~/ludext-env/bin/activate"
-echo "     python3 $SCRIPT_DIR/ludext.py"
+echo "     source ~/ludok-home-env/bin/activate"
+echo "     python3 $SCRIPT_DIR/briefing.py"
 echo ""
 echo "  4. Use --debug to save the briefing to a file:"
-echo "     python3 $SCRIPT_DIR/ludext.py --debug"
+echo "     python3 $SCRIPT_DIR/briefing.py --debug"
 echo ""
 echo "  5. Check the bot is running:"
-echo "     sudo systemctl status ludext-bot"
+echo "     sudo systemctl status ludok-home-bot"
 echo ""

@@ -77,7 +77,7 @@ def crear_tarea(titulo, fecha=None):
 
         ical = Calendar()
         todo = Todo()
-        todo.add("uid",     str(uuid.uuid4()) + "@ludext")
+        todo.add("uid",     str(uuid.uuid4()) + "@ludok-home")
         todo.add("summary", titulo)
         todo.add("status",  "NEEDS-ACTION")
         todo.add("created", datetime.now())
