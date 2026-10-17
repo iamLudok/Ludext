@@ -4,7 +4,7 @@
 
 **Your private morning briefing, self-hosted on a Raspberry Pi.**
 
-Emails, calendar, tasks, news and medicines, delivered to Telegram every morning.<br>
+Calendar, tasks, medicines and news (as a voice note), delivered to Telegram every morning.<br>
 Your data lives on your own hardware. No subscriptions. No AI cloud services.
 
 [![License: MIT](https://img.shields.io/github/license/iamLudok/Ludext?style=flat-square&color=blue)](LICENSE)
@@ -37,11 +37,11 @@ Your data lives on your own hardware. No subscriptions. No AI cloud services.
 
 Most assistants send your personal data to external servers. Ludext is built around a different principle: **your data stays yours**.
 
-- 🏠 **Self-hosted data**: Nextcloud stores your calendar, tasks, notes, photos, and news feeds on hardware you own and control.
-- 🔒 **Local processing**: the briefing is built on the Pi, and even the semantic photo search uses a local CLIP model. No data is sent to AI or analytics providers.
+- 🏠 **Self-hosted data**: Nextcloud stores your calendar, tasks, notes, and news feeds on hardware you own and control.
+- 🔒 **Local processing**: the briefing is built on the Pi, the news audio is synthesized locally with Piper. No data is sent to AI or analytics providers.
 - 💸 **No subscriptions**: once set up, Ludext runs for free indefinitely.
 
-> **What does leave your network:** Ludext reads your inbox from Gmail over IMAP, and the briefing and bot replies are delivered through Telegram's servers (bot chats are not end-to-end encrypted). Everything else (calendar, tasks, notes, photos, news) stays on your Nextcloud.
+> **What does leave your network:** the briefing, news audio and bot replies are delivered through Telegram's servers (bot chats are not end-to-end encrypted). Everything else (calendar, tasks, notes, news) stays on your Nextcloud.
 
 ---
 
@@ -49,9 +49,8 @@ Most assistants send your personal data to external servers. Ludext is built aro
 
 | Layer | Technology | Role |
 |---|---|---|
-| Email | Gmail (IMAP) | Fetches and filters unread messages |
-| Self-hosted data | Nextcloud | Calendar, tasks, news feeds, notes, photos |
-| Photo search | CLIP (sentence-transformers) | Semantic photo search, runs locally |
+| Self-hosted data | Nextcloud | Calendar, tasks, news feeds, notes |
+| Text to speech | Piper | Reads the news aloud, runs locally |
 | Delivery | Telegram Bot | Sends the briefing and accepts commands |
 | Runtime | Raspberry Pi 4/5 | Runs the whole stack, 24/7 |
 
@@ -60,15 +59,13 @@ Most assistants send your personal data to external servers. Ludext is built aro
 ## Features
 
 ### Daily Briefing (automatic, every morning at 7:30)
-- 📧 **Unread emails**: filtered and summarized, only what matters
 - 📅 **Calendar**: events for today and tomorrow
 - ✅ **Pending tasks**: most urgent ones highlighted
-- 📰 **News**: relevant articles from your Nextcloud News feeds
+- 📰 **News**: the top headlines from your Nextcloud News feeds, plus a voice note that reads every article aloud
 - 💊 **Medicines**: which ones to take today and at what time
 
 ### Telegram Bot (always on, responds instantly)
 - 🗂️ **Organize**: manage tasks, calendar events, medicines, shopping list, car expenses, wishlist, and gift ideas directly from Telegram
-- 🔍 **Photo search**: find your Nextcloud photos by natural-language description (e.g. "boarding pass iceland"), using a local CLIP model
 - ⏰ **Reminders**: a notification 30 minutes before every calendar event, and medicine reminders with a one-tap ✅ button
 - 🖥️ **System health**: automatic alerts for high CPU temperature, RAM, or disk usage, plus a network device scanner
 
@@ -88,13 +85,11 @@ The bot only answers your own `TELEGRAM_CHAT_ID`; messages from anyone else are 
 - **Calendar**: for CalDAV events and tasks
 - **News**: for RSS feed summaries
 - **Notes**: for shopping list, car expenses, wishlist, gift ideas, and medicine tracking
-- **Files**: photos in the `Photos` folder are used for semantic photo search
 
 ### Other
-- A Gmail account with IMAP enabled
 - A Telegram account to create a bot
-- `nmap` installed on the Pi (for the `/red` command, installed by `setup.sh`)
-- ~1 GB of free disk space for the CLIP model, which is downloaded the first time you run `/indexarfotos`. Indexing a large photo library on a Pi can take a while.
+- `nmap` and `ffmpeg` installed on the Pi (installed by `setup.sh`)
+- ~65 MB for the Spanish Piper voice, downloaded by `setup.sh` into `voices/`
 
 ---
 
@@ -126,25 +121,15 @@ nano .env
 
 | Variable | Description |
 |---|---|
-| `GMAIL_USER` | Your Gmail address |
-| `GMAIL_APP_PASSWORD` | Gmail app password (see below) |
 | `NEXTCLOUD_URL` | Your Nextcloud URL, e.g. `http://192.168.1.50:8080` |
 | `NEXTCLOUD_USER` | Your Nextcloud username |
-| `NEXTCLOUD_PASSWORD` | Your Nextcloud password |
+| `NEXTCLOUD_PASSWORD` | A Nextcloud [app password](https://docs.nextcloud.com/server/latest/user_manual/en/session_management.html#managing-devices), not your account password |
 | `NEXTCLOUD_CALDAV_URL` | Usually `NEXTCLOUD_URL/remote.php/dav` |
 | `TELEGRAM_TOKEN` | Your Telegram bot token |
 | `TELEGRAM_CHAT_ID` | Your Telegram chat ID |
+| `PIPER_VOICE` | Optional: path to another Piper voice `.onnx` (default `voices/es_ES-davefx-medium.onnx`) |
 
-### 4. Gmail App Password
-
-Gmail requires an app-specific password for IMAP access:
-
-1. Go to [myaccount.google.com/security](https://myaccount.google.com/security)
-2. Enable **2-Step Verification** if not already active
-3. Go to **App passwords** and create a new one named "Ludext"
-4. Copy the 16-character code into `.env` → `GMAIL_APP_PASSWORD`
-
-### 5. Telegram Bot
+### 4. Telegram Bot
 
 1. Open Telegram and search for **@BotFather**
 2. Send `/newbot` and follow the steps
@@ -153,7 +138,7 @@ Gmail requires an app-specific password for IMAP access:
    `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates`
 5. Find `"id"` inside `"chat"`. That's your `TELEGRAM_CHAT_ID`
 
-### 6. Register bot commands
+### 5. Register bot commands
 
 This makes Telegram show the command menu when you type `/` in the chat.  
 Run `setMyCommands` once with whichever commands you want to expose (replace `<YOUR_TOKEN>`):
@@ -172,7 +157,7 @@ curl -X POST "https://api.telegram.org/bot<YOUR_TOKEN>/setMyCommands" \
 Full list of available commands: `/ayuda` inside the bot or [docs/commands.md](docs/commands.md).  
 You only need to do this once. The commands persist on Telegram's side and survive bot restarts.
 
-### 7. Test it
+### 6. Test it
 
 ```bash
 source ~/ludext-env/bin/activate
@@ -204,8 +189,9 @@ Ludext/
 │   └── handlers.py         ← Telegram bot command handlers
 ├── core/
 │   ├── ai.py               ← Builds the briefing text
+│   ├── audio.py            ← News voice note (Piper TTS)
 │   ├── config.py           ← Reads .env and exposes CONFIG
-│   └── sources.py          ← Data collection (emails, calendar, tasks, news)
+│   └── sources.py          ← Data collection (calendar, tasks, news)
 ├── deploy/
 │   └── setup.sh            ← Automated installation script
 ├── docs/
@@ -218,9 +204,6 @@ Ludext/
 │   ├── medicine.py         ← Medicine tracking
 │   ├── shopping.py         ← Shopping list
 │   └── wishlist.py         ← Wishlist
-├── photos/
-│   ├── indexer.py          ← Indexes Nextcloud photos with CLIP
-│   └── search.py           ← Semantic photo search
 ├── scheduling/
 │   ├── events.py           ← Event CRUD (Nextcloud CalDAV)
 │   └── tasks.py            ← Task CRUD (Nextcloud CalDAV)

@@ -7,12 +7,11 @@ import threading
 import time
 from datetime import datetime
 from core.config import CONFIG
-from photos.indexer import run_indexing
-from photos.search import search_photos, download_photo_for_telegram
 from scheduling.tasks import crear_tarea, borrar_tarea, editar_tarea, listar_tareas
 from scheduling.events import crear_evento, borrar_evento, editar_evento
-from core.sources import get_emails, get_calendar_events, get_tasks, get_news
+from core.sources import get_calendar_events, get_tasks, get_news
 from core.ai import build_briefing
+from core.audio import guion_noticias, generar_audio
 from notes.medicine import marcar_tomada, resumen_medicinas, medicinas_de_hoy, grafico_adherencia
 from notes.shopping import listar, añadir, comprado, vaciar
 from notes.car import registrar_gasolina, registrar_taller, registrar_recambio, resumen, grafico_gastos
@@ -78,13 +77,9 @@ AYUDA = """🤖 Comandos disponibles:
 /graficocoche: gráfico de gastos (últimos 6 meses)
 /graficocoche <meses>: gráfico de los últimos N meses
 
-📷 FOTOS
-/buscarfoto <texto>: busca fotos por descripción natural
-/indexarfotos: indexa (o actualiza) las fotos de Nextcloud
-
 📬 RESUMEN
-/correos: resumen de correos no leídos
 /resume: genera el briefing completo ahora
+/noticias: noticias de hoy en audio 🎧
 
 /ayuda: muestra este mensaje"""
 
@@ -146,6 +141,15 @@ def send_photo(photo_bytes: bytes, caption: str = ""):
         data={"chat_id": CHAT_ID, "caption": caption},
         files={field: ("foto.jpg", photo_bytes, "image/jpeg")},
         timeout=60,
+    )
+
+def send_voice(audio_bytes: bytes, caption: str = ""):
+    """Envía una nota de voz (OGG/Opus) al chat."""
+    return _post_con_reintentos(
+        "sendVoice",
+        data={"chat_id": CHAT_ID, "caption": caption},
+        files={"voice": ("noticias.ogg", audio_bytes, "audio/ogg")},
+        timeout=120,
     )
 
 def _parse_fecha(texto):
@@ -265,15 +269,6 @@ def cmd_editarevent(args):
     partes = args.split("|", 1)
     _, msg = editar_evento(partes[0].strip(), partes[1].strip())
     return msg
-
-def cmd_correos():
-    emails = get_emails()
-    if not emails:
-        return "📧 No tienes correos no leídos."
-    lineas = ["📧 Correos no leídos:"]
-    for e in emails:
-        lineas.append(f"  • {e['from'][:50]}: {e['subject'][:80]}")
-    return "\n".join(lineas)
 
 def teclado_medicinas():
     """
@@ -454,62 +449,29 @@ def cmd_graficocoche(args):
     send_photo(png, caption=f"🚗 Gastos del coche: últimos {n_meses} meses")
     return None
 
-def cmd_buscarfoto(query: str):
-    """/buscarfoto <texto>: busca fotos por descripción natural."""
-    if not query:
-        return "⚠️ Uso: /buscarfoto <descripción>\nEjemplo: /buscarfoto boarding pass islandia"
-
-    send(f"🔍 Buscando fotos: {query}...")
-    try:
-        results = search_photos(query, top_k=3)
-    except Exception as e:
-        return f"⚠️ Error en la búsqueda: {e}"
-
-    if not results:
-        return "📷 No encontré fotos que coincidan con tu búsqueda."
-
-    sent = 0
-    for r in results:
-        photo_bytes = download_photo_for_telegram(r["webdav_path"])
-        if photo_bytes:
-            score_pct = round(r["score"] * 100)
-            caption   = f"📸 {r['filename']} (similitud: {score_pct}%)"
-            send_photo(photo_bytes, caption)
-            sent += 1
-
-    if sent == 0:
-        return "⚠️ Encontré resultados pero no pude descargar las fotos."
-    return None  # las fotos ya fueron enviadas
-
-
-def cmd_indexarfotos():
-    """/indexarfotos: indexa (o actualiza) las fotos de Nextcloud en segundo plano."""
-    def _progress(done, total, filename):
-        send(f"📸 Indexando... {done}/{total}: {filename}")
-
-    def _run():
-        try:
-            result = run_indexing(progress_callback=_progress)
-            send(
-                f"✅ Indexación completada.\n"
-                f"  Total en Nextcloud: {result['total']}\n"
-                f"  Nuevas indexadas: {result['new']}\n"
-                f"  Fallos: {result['failed']}"
-            )
-        except Exception as e:
-            send(f"⚠️ Error durante la indexación: {e}")
-
-    threading.Thread(target=_run, daemon=True).start()
-    return "📸 Iniciando indexación en segundo plano...\n(recibirás actualizaciones de progreso)"
-
-
 def cmd_resume():
     send("🌅 Generando briefing...")
-    emails   = get_emails()
     events   = get_calendar_events()
     tasks    = get_tasks()
     articles = get_news()
-    return build_briefing(emails, events, tasks, articles, resumen_medicinas())
+    audio    = generar_audio(guion_noticias(articles))
+    briefing = build_briefing(events, tasks, articles, resumen_medicinas(), con_audio=bool(audio))
+    for i in range(0, len(briefing), 4000):
+        send(briefing[i:i+4000])
+    if audio:
+        send_voice(audio, "📰 Noticias de hoy")
+    return None
+
+def cmd_noticias():
+    send("🎧 Preparando el audio de noticias...")
+    articles = get_news()
+    if not articles:
+        return "📰 No hay noticias nuevas."
+    audio = generar_audio(guion_noticias(articles))
+    if not audio:
+        return "⚠️ No se pudo generar el audio (¿está instalado Piper?)."
+    send_voice(audio, f"📰 {len(articles)} noticias")
+    return None
 
 def handle(text):
     """Enruta el comando al handler correspondiente."""
@@ -546,9 +508,7 @@ def handle(text):
         "/regalado":     lambda: cmd_regalado(args),
         "/pi":           lambda: cmd_pi(),
         "/red":          lambda: cmd_red(),
-        "/buscarfoto":   lambda: cmd_buscarfoto(args),
-        "/indexarfotos": lambda: cmd_indexarfotos(),
-        "/correos":      lambda: cmd_correos(),
+        "/noticias":     lambda: cmd_noticias(),
         "/resume":       lambda: cmd_resume(),
         "/ayuda":        lambda: AYUDA,
         "/start":        lambda: AYUDA,

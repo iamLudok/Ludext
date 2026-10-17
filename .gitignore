@@ -17,8 +17,8 @@ docs/ideas.md
 __pycache__/
 *.pyc
 
-# Base de datos de fotos indexadas (CLIP)
-photos_db/
+# Voces de Piper (se descargan en la instalación)
+voices/
 
 # Salida de depuración del briefing
 ludext_briefing.txt

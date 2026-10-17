@@ -25,22 +25,22 @@ Only the maintainer can see the report. You can expect a first response within a
 
 In scope:
 
-- Leaks of credentials or personal data handled by Ludext (Gmail, Nextcloud, Telegram)
+- Leaks of credentials or personal data handled by Ludext (Nextcloud, Telegram)
 - Ways to make the bot run commands for a chat other than the configured `TELEGRAM_CHAT_ID`
-- Injection or unsafe handling of command arguments, notes, emails or calendar data
+- Injection or unsafe handling of command arguments, notes, news or calendar data
 - Issues in `deploy/setup.sh` that weaken the security of the host
 
 Out of scope:
 
-- Vulnerabilities in Nextcloud, Telegram, Gmail or other third-party software (report those upstream)
+- Vulnerabilities in Nextcloud, Telegram, Piper or other third-party software (report those upstream)
 - Problems that require prior access to the Pi or to the `.env` file
 
 ## Hardening Your Installation
 
-Ludext has access to your email, calendar, notes and photos, so treat the Pi as a sensitive device:
+Ludext has access to your calendar and notes, so treat the Pi as a sensitive device:
 
 - **Protect `.env`**: it holds all your credentials. Restrict it to your user with `chmod 600 .env` and never commit it (it is already in `.gitignore`).
-- **Use app passwords**: use a Gmail App Password and a Nextcloud [app password](https://docs.nextcloud.com/server/latest/user_manual/en/session_management.html#managing-devices) instead of your main passwords, so you can revoke them at any time.
+- **Use app passwords**: use a Nextcloud [app password](https://docs.nextcloud.com/server/latest/user_manual/en/session_management.html#managing-devices) instead of your main password, so you can revoke them at any time.
 - **Keep your bot token secret**: anyone with the token can control the bot. If it leaks, revoke it with `/revoke` in @BotFather.
 - **Don't expose Nextcloud over plain HTTP**: an `http://` URL is fine inside your home network, but use HTTPS or a VPN to access Nextcloud from outside.
 - **Know what goes through Telegram**: briefings and bot replies pass through Telegram's servers, and bot chats are not end-to-end encrypted.

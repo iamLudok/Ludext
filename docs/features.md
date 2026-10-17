@@ -90,21 +90,6 @@ Gift ideas are stored in a Nextcloud Note called **"Regalos"**, accessible from 
 
 ---
 
-## Photo Search
-
-Ludext can search the photos in your Nextcloud `Photos` folder by describing them in natural language. It uses [CLIP](https://openai.com/research/clip) (`clip-ViT-B-32` via `sentence-transformers`), which runs entirely on the Pi.
-
-```
-/indexarfotos                      → index new photos (first run downloads the model)
-/buscarfoto boarding pass iceland  → sends the 3 best matches with their similarity score
-```
-
-- Photos are downloaded over WebDAV, turned into embeddings, and stored in `photos_db/` (git-ignored). The photos themselves are not copied.
-- Re-running `/indexarfotos` only processes new photos.
-- The first index of a large library can take a long time on a Pi; progress is reported in Telegram.
-
----
-
 ## Event Reminders
 
 The bot checks your Nextcloud calendar every minute and sends a Telegram notification about 30 minutes before each event starts.
@@ -164,7 +149,9 @@ To label your devices by name, edit `system/devices.json`:
 
 ## Customizing the Daily Briefing
 
-To adjust how each section of the briefing is formatted (how many emails, news items per feed, etc.), edit the section functions in [core/ai.py](../core/ai.py).
+To adjust how each section of the briefing is formatted (how many headlines, etc.), edit the section functions in [core/ai.py](../core/ai.py). The number of news items per feed is `max_per_feed` in `get_news()` ([core/sources.py](../core/sources.py)), and what the voice note says is built in `guion_noticias()` ([core/audio.py](../core/audio.py)).
+
+The news voice note is generated locally with [Piper](https://github.com/OHF-Voice/piper1-gpl). To use another voice, download any `.onnx` + `.onnx.json` pair from [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices) and set `PIPER_VOICE` in `.env`. If Piper or the voice is missing, the briefing is still sent as text.
 
 To change the briefing time, edit your crontab:
 

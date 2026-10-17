@@ -8,11 +8,9 @@ from dotenv import load_dotenv
 # Carga las variables del fichero .env
 load_dotenv()
 
-CONFIG = {
-    # Gmail
-    "gmail_user":           os.getenv("GMAIL_USER"),
-    "gmail_app_password":   os.getenv("GMAIL_APP_PASSWORD"),
+_RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+CONFIG = {
     # Nextcloud
     "nextcloud_url":        os.getenv("NEXTCLOUD_URL"),
     "nextcloud_user":       os.getenv("NEXTCLOUD_USER"),
@@ -22,4 +20,8 @@ CONFIG = {
     # Telegram
     "telegram_token":       os.getenv("TELEGRAM_TOKEN"),
     "telegram_chat_id":     os.getenv("TELEGRAM_CHAT_ID"),
+
+    # Piper (noticias en audio): ruta al modelo de voz .onnx
+    "piper_voice":          os.getenv("PIPER_VOICE",
+                                      os.path.join(_RAIZ, "voices", "es_ES-davefx-medium.onnx")),
 }

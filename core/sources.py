@@ -1,71 +1,12 @@
 # ─────────────────────────────────────────────────────────
-# sources.py: Datos de Gmail, Nextcloud y noticias
+# sources.py: Datos de Nextcloud (agenda, tareas y noticias)
 # ─────────────────────────────────────────────────────────
 
-import imaplib
-import email
 import re
-from email.header import decode_header
-from datetime import date, timedelta
 import requests
 from .config import CONFIG
 from scheduling.tasks import fetch as _fetch_tasks
 from scheduling.events import fetch as _fetch_events
-
-def get_emails(max_emails=10):
-    """
-    Devuelve hasta 10 correos no leídos
-    Primero mira las últimas 24h; si no llega a 10, completa con más antiguos
-    """
-    print("📧 Leyendo correos...")
-    emails = []
-    try:
-        mail = imaplib.IMAP4_SSL("imap.gmail.com")
-        mail.login(CONFIG["gmail_user"], CONFIG["gmail_app_password"])
-        mail.select("inbox")
-
-        since = (date.today() - timedelta(days=1)).strftime("%d-%b-%Y")
-        _, data = mail.search(None, f'(UNSEEN SINCE "{since}")')
-        ids = data[0].split()
-
-        if len(ids) < max_emails:
-            _, data_all = mail.search(None, "UNSEEN")
-            all_ids = data_all[0].split()
-            extra   = [i for i in all_ids if i not in ids]
-            ids     = extra[-(max_emails - len(ids)):] + ids
-
-        ids = ids[-max_emails:]
-
-        for uid in ids:
-            _, msg_data = mail.fetch(uid, "(BODY.PEEK[])")
-            msg = email.message_from_bytes(msg_data[0][1])
-
-            subject_raw, enc = decode_header(msg["Subject"] or "Sin asunto")[0]
-            subject = subject_raw.decode(enc or "utf-8") if isinstance(subject_raw, bytes) else subject_raw
-            sender  = msg.get("From", "Desconocido")
-
-            body = ""
-            if msg.is_multipart():
-                for part in msg.walk():
-                    if part.get_content_type() == "text/plain":
-                        try:
-                            body = part.get_payload(decode=True).decode("utf-8", errors="ignore")[:400]
-                        except Exception:
-                            pass
-                        break
-            else:
-                try:
-                    body = msg.get_payload(decode=True).decode("utf-8", errors="ignore")[:400]
-                except Exception:
-                    pass
-
-            emails.append({"from": sender, "subject": subject, "body": body.strip()})
-
-        mail.logout()
-        print(f"   → {len(emails)} correos no leídos")
-    except Exception as e:
-        print(f"   ⚠️  Error en correos: {e}")
-    return emails
 
 def get_calendar_events():
     """
@@ -86,13 +27,27 @@ def get_tasks():
     return tasks
 
 
-def get_news(max_per_feed=3):
+def _palabras(titulo):
+    """Palabras con contenido del titular (descarta las cortas: el, de, que...)."""
+    return {w for w in re.findall(r"\w+", titulo.lower()) if len(w) > 3}
+
+def _repetida(titulo, vistos):
+    """
+    Un mismo hecho llega con titulares casi iguales (el feed lo republica
+    retocado, o lo cuentan dos fuentes): por eso se compara por palabras
+    en común y no por texto exacto
+    """
+    p = _palabras(titulo)
+    return any(p and v and len(p & v) / min(len(p), len(v)) >= 0.6 for v in vistos)
+
+def get_news(max_per_feed=2):
     """
     Devuelve hasta max_per_feed artículos no leídos de cada feed
-    para asegurar variedad entre fuentes
+    para asegurar variedad entre fuentes, sin noticias repetidas
     """
     print("📰 Leyendo noticias...")
     articles = []
+    vistos   = []
     auth = (CONFIG["nextcloud_user"], CONFIG["nextcloud_password"])
     base = f"{CONFIG['nextcloud_url']}/index.php/apps/news/api/v1-3"
     try:
@@ -113,10 +68,18 @@ def get_news(max_per_feed=3):
                 key=lambda x: x.get("pubDate") or 0,
                 reverse=True,
             )
-            for item in items[:max_per_feed]:
-                body_clean = re.sub(r"<[^>]+>", "", item.get("body", ""))[:200]
+            del_feed = 0
+            for item in items:
+                if del_feed >= max_per_feed:
+                    break
+                titulo = item.get("title", "")
+                if _repetida(titulo, vistos):
+                    continue
+                vistos.append(_palabras(titulo))
+                del_feed += 1
+                body_clean = re.sub(r"<[^>]+>", "", item.get("body", ""))[:600]
                 articles.append({
-                    "title":   item.get("title", ""),
+                    "title":   titulo,
                     "summary": body_clean.strip(),
                     "feed":    feed["title"],
                     "date":    item.get("pubDate"),

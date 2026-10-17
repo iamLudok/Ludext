@@ -77,7 +77,7 @@ def main():
                 continue
 
             print(f"   → {text}")
-            # Cada comando en su propio hilo: los lentos (/red, /buscarfoto)
+            # Cada comando en su propio hilo: los lentos (/red, /resume)
             # no bloquean el polling ni al resto de comandos
             threading.Thread(target=_procesar, args=(text,), daemon=True).start()
 

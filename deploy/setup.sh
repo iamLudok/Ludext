@@ -8,13 +8,13 @@ echo "  Ludext: Private Morning Briefing"
 echo "================================================"
 echo ""
 echo "Requirements: Nextcloud with Calendar, News and Notes apps installed."
-echo "Features: daily briefing, Telegram bot, wishlist, system monitor, network scanner."
+echo "Features: daily briefing with news audio, Telegram bot, wishlist, system monitor, network scanner."
 
 # ── 1. System dependencies ───────────────────────
 echo ""
 echo "📦 Installing system dependencies..."
 sudo apt-get update -qq
-sudo apt-get install -y python3-pip python3-venv curl nmap
+sudo apt-get install -y python3-pip python3-venv curl nmap ffmpeg
 
 # ── 2. Python virtual environment ───────────────
 echo ""
@@ -26,6 +26,17 @@ pip install --upgrade pip -q
 pip install -r "$SCRIPT_DIR/requirements.txt" -q
 
 echo "   ✅ Python libraries installed"
+
+# ── Piper voice (news audio) ─────────────────────
+echo ""
+echo "🎧 Downloading Spanish voice for news audio..."
+VOICE_DIR="$SCRIPT_DIR/voices"
+VOICE_URL="https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_ES/davefx/medium"
+mkdir -p "$VOICE_DIR"
+for f in es_ES-davefx-medium.onnx es_ES-davefx-medium.onnx.json; do
+    [ -f "$VOICE_DIR/$f" ] || curl -sL -o "$VOICE_DIR/$f" "$VOICE_URL/$f"
+done
+echo "   ✅ Voice ready in $VOICE_DIR"
 
 # ── nmap capabilities (MAC addresses without root) ───
 echo ""

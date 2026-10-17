@@ -6,10 +6,8 @@ python-dotenv
 caldav
 icalendar
 
+# Noticias en audio (TTS local)
+piper-tts
+
 # Gráficos (/graficocoche)
 matplotlib
-
-# Búsqueda de fotos con CLIP (/buscarfoto, /indexarfotos)
-numpy
-pillow
-sentence-transformers
